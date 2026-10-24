@@ -223,8 +223,10 @@ export function Field({ label, hint, children, style }) {
 }
 
 export function Toggle({ label, value, onChange, hint, icon, color }) {
+  const { dir } = useI18n();
   return (
-    <Row justify="space-between" style={{ paddingVertical: 10 }} gap={12}>
+    <Pressable onPress={() => { haptic(); onChange(!value); }} accessibilityRole="switch" accessibilityState={{ checked: !!value }}
+      style={{ flexDirection: dir.row, alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, gap: 12 }}>
       {icon ? (
         <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.sunken, alignItems: 'center', justifyContent: 'center' }}>
           <Icon name={icon} size={18} color={color || C.primary} />
@@ -235,7 +237,7 @@ export function Toggle({ label, value, onChange, hint, icon, color }) {
         {hint ? <Txt v="tiny" style={{ ...ff(400) }}>{hint}</Txt> : null}
       </View>
       <Switch value={!!value} onValueChange={(v) => { haptic(); onChange(v); }} trackColor={{ true: C.primary, false: C.line }} thumbColor="#fff" />
-    </Row>
+    </Pressable>
   );
 }
 
@@ -336,5 +338,31 @@ export function Sheet({ visible, onClose, title, children }) {
         <ScrollView keyboardShouldPersistTaps="handled">{children}</ScrollView>
       </View>
     </Modal>
+  );
+}
+
+// ---------- toast with undo ----------
+export const ToastCtx = createContext(() => {});
+export const useToast = () => useContext(ToastCtx);
+
+export function ToastHost({ toast, onClose }) {
+  const insets = useSafeAreaInsets();
+  const { dir } = useI18n();
+  if (!toast) return null;
+  return (
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom: insets.bottom + 92 }}>
+      <View style={[{
+        flexDirection: dir.row, alignItems: 'center', gap: 10, backgroundColor: C.ink, borderRadius: R.md,
+        paddingVertical: 12, paddingHorizontal: 16,
+      }, shadow(2)]}>
+        {toast.icon ? <Icon name={toast.icon} size={18} color={C.bg} /> : null}
+        <Text style={{ flex: 1, color: C.bg, fontSize: 15, writingDirection: dir.writing, textAlign: dir.align, ...ff(500) }} numberOfLines={2}>{toast.text}</Text>
+        {toast.action ? (
+          <Pressable hitSlop={10} onPress={() => { haptic(); toast.onAction && toast.onAction(); onClose(); }}>
+            <Text style={{ color: C.scheme === 'dark' ? C.primary : '#AEB6FF', fontSize: 15, ...ff(700) }}>{toast.action}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
   );
 }

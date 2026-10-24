@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Toggle, Card, IconBtn } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Toggle, Card, IconBtn, useToast } from '../ui';
+import { hebrewFromDateStr, formatHebrew } from '../logic/hebrew';
 import { BirthdayRow, Group } from '../components';
 import { TimeField } from '../pickers';
 import { C, R, ff, shadow } from '../theme';
@@ -50,7 +51,8 @@ export default function PeopleScreen({ nav, now }) {
 
 export function PersonEditor({ nav, params }) {
   const { data, actions } = useStore();
-  const { t, f } = useI18n();
+  const { t, f, lang } = useI18n();
+  const toast = useToast();
   const existing = params.id ? data.people.find((x) => x.id === params.id) : null;
   const [p, setP] = useState(() => existing || {
     name: '', day: null, month: null, year: null, phone: '', notes: '',
@@ -59,11 +61,15 @@ export function PersonEditor({ nav, params }) {
   const [err, setErr] = useState(null);
   const set = (patch) => setP((x) => ({ ...x, ...patch }));
   const maxDay = p.month ? daysInMonth(2024, p.month - 1) : 31; // 2024 is a leap year → Feb has 29
+  const yr = Number(p.year);
+  const validYear = !!(p.day && p.month && yr >= 1900 && yr <= new Date().getFullYear());
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const birthStr = validYear ? `${yr}-${pad2(p.month)}-${pad2(Math.min(p.day, daysInMonth(yr, p.month - 1)))}` : null;
 
   const save = () => {
     if (!p.name.trim()) { setErr(t('person.nameRequired')); return; }
     if (!p.day || !p.month) { setErr(t('person.birthday')); return; }
-    const clean = { ...p, name: p.name.trim(), day: Math.min(p.day, maxDay), year: p.year ? Number(p.year) || null : null };
+    const clean = { ...p, name: p.name.trim(), day: Math.min(p.day, maxDay), year: p.year ? Number(p.year) || null : null, hebrew: !!p.hebrew && validYear };
     const dup = data.people.find((x) => x.id !== p.id && x.name.trim().toLowerCase() === clean.name.toLowerCase() && x.day === clean.day && x.month === clean.month);
     const doSave = () => { actions.savePerson(clean); nav.pop(); };
     if (dup) {
@@ -72,7 +78,10 @@ export function PersonEditor({ nav, params }) {
   };
   const remove = () => Alert.alert(t('common.confirmDelete'), p.name, [
     { text: t('common.cancel'), style: 'cancel' },
-    { text: t('common.delete'), style: 'destructive', onPress: () => { actions.deletePerson(p.id); nav.pop(); } },
+    { text: t('common.delete'), style: 'destructive', onPress: () => {
+      const snap = existing; actions.deletePerson(p.id); nav.pop();
+      toast({ text: `${t('toast.deleted')}: ${p.name}`, icon: 'trash', action: t('toast.undo'), onAction: () => actions.restorePerson(snap) });
+    } },
   ]);
 
   const days = Array.from({ length: maxDay }, (_, i) => i + 1);
@@ -151,10 +160,17 @@ export function PersonEditor({ nav, params }) {
         </Field>
       </Row>
 
+      <Card style={{ marginBottom: 22, paddingVertical: 4 }}>
+        <Toggle icon="star" color={C.holiday} label={t('person.hebrew')}
+          hint={validYear ? (p.hebrew ? t('person.hebrewBorn', { date: formatHebrew(lang, hebrewFromDateStr(birthStr)) }) : t('person.hebrewHint')) : t('person.hebrewNeedsYear')}
+          value={!!p.hebrew && validYear} onChange={(v) => { if (validYear) set({ hebrew: v }); }} />
+      </Card>
+
       <Field label={t('person.remind')}>
         <Card style={{ paddingVertical: 4 }}>
           <Toggle label={t('person.onDay')} value={p.remindOnDay} onChange={(v) => set({ remindOnDay: v })} />
           <Toggle label={t('person.dayBefore')} value={p.remindDayBefore} onChange={(v) => set({ remindDayBefore: v })} />
+          <Toggle label={t('person.weekBefore')} value={p.remindWeekBefore} onChange={(v) => set({ remindWeekBefore: v })} />
         </Card>
         <TimeField value={p.time} onChange={(v) => set({ time: v })} allowNone={false} />
       </Field>

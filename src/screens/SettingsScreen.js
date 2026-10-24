@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Alert, Share, Linking, Pressable } from 'react-native';
+import { View, ScrollView, Alert, Share, Linking, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore, exportBackup, validateBackup } from '../store';
-import { useI18n, Row, Txt, Section, Card, Toggle, Button, Input, Sheet, Icon, Page, Segmented } from '../ui';
+import { useI18n, Row, Txt, Section, Card, Toggle, Button, Input, Sheet, Icon, Page, Segmented, useToast } from '../ui';
 import { TimeField } from '../pickers';
 import { LANGS } from '../i18n';
 import { C, R } from '../theme';
-import { supported } from '../notifications';
+import { supported, sendTest } from '../notifications';
 
 export function LanguagePicker({ value, onPick }) {
   return (
@@ -31,6 +31,7 @@ export function LanguagePicker({ value, onPick }) {
 
 export default function SettingsScreen({ nav, notif, onRequestPermission, scheduledCount }) {
   const { data, actions } = useStore();
+  const toast = useToast();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const s = data.settings;
@@ -95,6 +96,24 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         </Card>
       </Section>
 
+      {supported ? (
+        <Section title={t('reliable.title')} icon="shield-checkmark" color={C.primary}>
+          <Card style={{ gap: 12 }}>
+            <Button variant="soft" icon="notifications" title={t('reliable.test')} onPress={async () => {
+              if (notif !== 'granted') { const r = await onRequestPermission(); if (r !== 'granted') return; }
+              await sendTest(t);
+              toast({ text: t('reliable.testSent'), icon: 'time' });
+            }} />
+            {Platform.OS === 'android' ? (
+              <>
+                <Txt v="small" style={{ color: C.muted }}>{t('reliable.battery')}</Txt>
+                <Button variant="outline" icon="battery-charging-outline" title={t('reliable.openApp')} onPress={() => Linking.openSettings()} />
+              </>
+            ) : null}
+          </Card>
+        </Section>
+      ) : null}
+
       <Section title={t('settings.modules')} icon="apps" color={C.shop}>
         <Card style={{ paddingVertical: 4 }}>
           <Toggle icon="checkmark-circle" color={C.primary} label={t('tabs.tasks')} value={s.modules.tasks} onChange={(v) => setModule('tasks', v)} />
@@ -118,7 +137,7 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         ])} />
       </Section>
 
-      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.1.0</Txt>
+      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.2.0</Txt>
 
       <Sheet visible={importOpen} onClose={() => setImportOpen(false)} title={t('settings.import')}>
         <Input value={importText} onChangeText={setImportText} placeholder={t('settings.importPh')} multiline style={{ minHeight: 140, textAlign: 'left', writingDirection: 'ltr' }} />

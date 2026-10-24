@@ -131,3 +131,42 @@ eq('roundtrip', dateStrFromRd(rdFromDateStr('2030-02-28')), '2030-02-28');
 
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;
+
+// --- quick add parser ---
+import { parseQuick } from '../src/logic/quickparse';
+{
+  const qn = new Date(2026, 9, 24, 14, 0);
+  const q = (s) => parseQuick(s, qn);
+  eq('qp he tomorrow 8', q('מחר ב-8 להתקשר לאמא'), { title: 'להתקשר לאמא', date: '2026-10-25', time: '08:00' });
+  eq('qp he 5 => 17', q('להתקשר לאמא מחר ב5').time, '17:00');
+  eq('qp he bare number stays', q('לקנות 2 חלב'), { title: 'לקנות 2 חלב', date: null, time: null });
+  eq('qp he weekday', q('ביום שלישי בשעה 18:30 חוג'), { title: 'חוג', date: '2026-10-27', time: '18:30' });
+  eq('qp he in an hour', q('בעוד שעה להוציא כביסה').time, '15:00');
+  eq('qp he date', q('פגישה ב-10/11 ב-9'), { title: 'פגישה', date: '2026-11-10', time: '09:00' });
+  eq('qp en', q('call mom tomorrow at 5pm'), { title: 'call mom', date: '2026-10-25', time: '17:00' });
+  eq('qp en weekday', q('dentist on monday at 10:30'), { title: 'dentist', date: '2026-10-26', time: '10:30' });
+  eq('qp en past time -> tomorrow', q('gym 7am').date, '2026-10-25');
+  eq('qp ru', q('завтра в 18:00 купить хлеб'), { title: 'купить хлеб', date: '2026-10-25', time: '18:00' });
+  eq('qp ru weekday', q('в пятницу позвонить маме').date, '2026-10-30');
+  eq('qp ru bare number', q('купить 3 яблока').title, 'купить 3 яблока');
+}
+console.log(`quick-add checks done: ${passed} passed, ${failed} failed`);
+if (failed) process.exitCode = 1;
+
+// --- Hebrew-date birthdays ---
+import { birthdayInYear as bIY, nextBirthday as nB } from '../src/logic/recurrence';
+{
+  // Born 1990-10-24 = 5 Cheshvan 5751. In 2026, 5 Cheshvan 5787 = 2026-10-16.
+  const p = { day: 24, month: 10, year: 1990, hebrew: true };
+  eq('heb bday 2026', bIY(p, 2026), '2026-10-16');
+  eq('heb bday age', nB(p, '2026-10-01'), { date: '2026-10-16', age: 36 });
+  eq('greg bday unchanged', bIY({ ...p, hebrew: false }, 2026), '2026-10-24');
+  // Born in Adar of a regular year (1995-03-01 = 29 Adar 5755?) -> celebrates Adar II in leap 5787 (2027)
+  const a = { day: 16, month: 3, year: 1995, hebrew: true }; // 14 Adar 5755
+  const d27 = bIY(a, 2027);
+  eq('adar -> adar II in leap year', d27, '2027-03-23');
+  const wk = buildPlan({ settings: { defaultTime: '09:00' }, tasks: [], lists: [], people: [{ id: 'w', name: 'W', day: 3, month: 11, remindOnDay: false, remindWeekBefore: true, time: '10:00' }] }, new Date(2026, 9, 24, 10), t);
+  eq('week-before reminder', wk.items.map((i) => i.id)[0], 'bday:w:2026-11-03:week');
+}
+console.log(`hebrew birthday checks: ${passed} passed, ${failed} failed`);
+if (failed) process.exitCode = 1;

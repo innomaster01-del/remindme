@@ -5,10 +5,11 @@ import {
   useFonts, Rubik_400Regular, Rubik_500Medium, Rubik_600SemiBold, Rubik_700Bold, Rubik_800ExtraBold,
 } from '@expo-google-fonts/rubik';
 import { StoreProvider, useStore } from './src/store';
-import { I18nCtx, makeDir, Icon, Sheet, useI18n, haptic } from './src/ui';
+import { I18nCtx, makeDir, Icon, Sheet, useI18n, haptic, ToastCtx, ToastHost } from './src/ui';
 import { makeT, makeFormat } from './src/i18n';
 import { C, applyTheme, fontState, ff, shadow } from './src/theme';
-import { todayStr } from './src/logic/dates';
+import { todayStr, addDays, combine } from './src/logic/dates';
+import { isRecurring } from './src/logic/recurrence';
 import { buildPlan } from './src/logic/scheduler';
 import * as N from './src/notifications';
 import TodayScreen, { AddSheetContent } from './src/screens/TodayScreen';
@@ -90,6 +91,13 @@ function Main() {
   const [perm, setPerm] = useState('undetermined');
   const [scheduled, setScheduled] = useState(0);
   const [horizon, setHorizon] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  const showToast = useCallback((tst) => {
+    clearTimeout(toastTimer.current);
+    setToast(tst);
+    toastTimer.current = setTimeout(() => setToast(null), tst.action ? 5000 : 2600);
+  }, []);
 
   const nav = useMemo(() => ({
     push: (name, params = {}) => setStack((s) => [...s, { name, params, key: Date.now() + Math.random() }]),
@@ -135,11 +143,24 @@ function Main() {
     return () => clearTimeout(timer);
   }, [data.tasks, data.people, data.lists, data.settings, perm, t, dayKey]);
 
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
   // Notification taps and action buttons.
   useEffect(() => N.onResponse(({ action, data: d }) => {
     if (d.kind === 'task') {
       if (action === 'done') { actions.setTaskDone(d.id, d.date); return; }
       if (action === 'snooze') { actions.snoozeTask(d.id, d.date, 60); return; }
+      if (action === 'tomorrow') {
+        const task = dataRef.current.tasks.find((x) => x.id === d.id);
+        const tomorrow = addDays(todayStr(), 1);
+        if (task && !isRecurring(task)) actions.postponeTask(d.id, tomorrow);
+        else {
+          const at = combine(tomorrow, (task && task.time) || dataRef.current.settings.defaultTime || '09:00');
+          actions.snoozeTask(d.id, d.date, Math.max(1, Math.round((at.getTime() - Date.now()) / 60000)));
+        }
+        return;
+      }
       setStack([]); setTab('today'); if (d.date) setDate(d.date);
     } else if (d.kind === 'person') {
       setStack([]); setTab('today'); if (d.date) setDate(d.date);
@@ -202,6 +223,7 @@ function Main() {
 
   return (
     <I18nCtx.Provider value={i18n}>
+     <ToastCtx.Provider value={showToast}>
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
       <View key={scheme} style={{ flex: 1, backgroundColor: C.bg }}>
         <View style={{ flex: 1 }}>
@@ -227,7 +249,9 @@ function Main() {
             if (k === 'person') nav.push('person', {});
           }} />
         </Sheet>
+        <ToastHost toast={toast} onClose={() => setToast(null)} />
       </View>
+     </ToastCtx.Provider>
     </I18nCtx.Provider>
   );
 }

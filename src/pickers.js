@@ -147,7 +147,11 @@ export function TimeField({ value, onChange, allowNone = true }) {
     <>
       <Row gap={8} style={{ flexWrap: 'wrap' }}>
         {allowNone ? <Chip label={t('common.noTime')} selected={!value} onPress={() => onChange(null)} /> : null}
-        <Chip icon="time-outline" label={value || t('common.pickTime')} selected={!!value} onPress={() => setOpen(true)} />
+        {[['morning', '08:00', 'sunny-outline'], ['noon', '13:00', 'partly-sunny-outline'], ['evening', '19:00', 'moon-outline']].map(([k, v, ic]) => (
+          <Chip key={k} icon={ic} label={`${t('presets.' + k)} ${v}`} selected={value === v} onPress={() => onChange(v)} />
+        ))}
+        <Chip icon="time-outline" label={value && !['08:00', '13:00', '19:00'].includes(value) ? value : t('common.pickTime')}
+          selected={!!value && !['08:00', '13:00', '19:00'].includes(value)} onPress={() => setOpen(true)} />
       </Row>
       <TimePickerSheet visible={open} value={value} onPick={onChange} onClose={() => setOpen(false)} />
     </>

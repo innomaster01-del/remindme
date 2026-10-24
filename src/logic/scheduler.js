@@ -3,7 +3,7 @@
 // schedules this plan, so re-running it never creates duplicates.
 
 import { addDays, combine, toDateStr } from './dates';
-import { occurrencesBetween, isDoneOn, birthdayInYear } from './recurrence';
+import { occurrencesBetween, isDoneOn, birthdayInYear, ageOn } from './recurrence';
 
 export const WINDOW_DAYS = 30;
 export const MAX_SCHEDULED = 60; // iOS allows 64 pending local notifications per app
@@ -49,7 +49,7 @@ export function buildPlan(data, now, t) {
     for (const p of people) {
       for (const yr of [y, y + 1]) {
         const d = birthdayInYear(p, yr);
-        const age = p.year ? yr - p.year : null;
+        const age = ageOn(p, d);
         const time = p.time || defTime;
         if (p.remindOnDay !== false) {
           add(`bday:${p.id}:${d}:day`, combine(d, time), t('notif.bdayTodayTitle', { name: p.name }),
@@ -59,6 +59,10 @@ export function buildPlan(data, now, t) {
           const before = addDays(d, -1);
           add(`bday:${p.id}:${d}:before`, combine(before, time), t('notif.bdayTomorrowTitle', { name: p.name }),
             t('notif.bdayTomorrowBody'), { kind: 'person', id: p.id, date: d });
+        }
+        if (p.remindWeekBefore) {
+          add(`bday:${p.id}:${d}:week`, combine(addDays(d, -7), time), t('notif.bdayWeekTitle', { name: p.name }),
+            t('notif.bdayWeekBody'), { kind: 'person', id: p.id, date: d });
         }
       }
     }

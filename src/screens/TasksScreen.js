@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Segmented } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Segmented, useToast } from '../ui';
+import { QuickAdd } from '../components';
 import { TaskRow, Group } from '../components';
 import { DateField, TimeField } from '../pickers';
 import { C, ff, shadow } from '../theme';
@@ -35,6 +36,7 @@ export default function TasksScreen({ nav, now }) {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, paddingBottom: 120 }}>
       <Txt v="display">{t('tabs.tasks')}</Txt>
+      <QuickAdd />
       <View style={{ marginTop: 14 }}>
         <Segmented value={tab} onChange={setTab} options={[
           { value: 'open', label: `${t('task.open')} (${open.length})` },
@@ -82,6 +84,7 @@ const REPEATS = ['none', 'daily', 'weekly', 'monthly'];
 export function TaskEditor({ nav, params }) {
   const { data, actions } = useStore();
   const { t, f, dir } = useI18n();
+  const toast = useToast();
   const existing = params.id ? data.tasks.find((x) => x.id === params.id) : null;
   const [task, setTask] = useState(() => existing || {
     title: '', notes: '', date: params.date || todayStr(), time: null, priority: 'normal',
@@ -99,10 +102,13 @@ export function TaskEditor({ nav, params }) {
     actions.saveTask({ ...task, title: task.title.trim(), repeat: r, date: r.type !== 'none' && !task.date ? todayStr() : task.date, snoozeUntil: null });
     nav.pop();
   };
-  const remove = () => Alert.alert(t('common.confirmDelete'), task.title, [
-    { text: t('common.cancel'), style: 'cancel' },
-    { text: t('common.delete'), style: 'destructive', onPress: () => { actions.deleteTask(task.id); nav.pop(); } },
-  ]);
+  // Delete right away; the toast offers undo.
+  const remove = () => {
+    const snap = existing;
+    actions.deleteTask(task.id);
+    nav.pop();
+    toast({ text: `${t('toast.deleted')}: ${snap.title}`, icon: 'trash', action: t('toast.undo'), onAction: () => actions.restoreTask(snap) });
+  };
 
   return (
     <Page

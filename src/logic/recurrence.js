@@ -1,4 +1,5 @@
 import { parseDate, weekday, daysInMonth, isLeapYear, addDays } from './dates';
+import { hebrewFromDateStr, isHebLeap, monthLength, rdFromHebrew, dateStrFromRd } from './hebrew';
 
 // ---------- Tasks ----------
 // task.repeat = { type: 'none'|'daily'|'weekly'|'monthly', days?: number[] }
@@ -50,7 +51,34 @@ export function occurrencesBetween(task, from, to) {
 // ---------- Birthdays ----------
 // person = { day, month (1-12), year?, feb29: 'feb28'|'mar1' }
 
+// Hebrew birth date of a person who celebrates by the Hebrew calendar (needs a birth year).
+export function hebrewBirth(person) {
+  if (!person.hebrew || !person.year) return null;
+  const pad = (n) => String(n).padStart(2, '0');
+  return hebrewFromDateStr(`${person.year}-${pad(person.month)}-${pad(person.day)}`);
+}
+
+// The Hebrew-calendar birthday that falls in Gregorian year y.
+function hebrewBirthdayInYear(hb, y) {
+  for (const hy of [y + 3760, y + 3761]) {
+    let m = hb.month;
+    const bornLeapAdar = (m === 12 || m === 13) && isHebLeap(hb.year);
+    if (m === 13 && !isHebLeap(hy)) m = 12; // Adar II → Adar in a regular year
+    else if (m === 12 && bornLeapAdar && !isHebLeap(hy)) m = 12; // Adar I → Adar
+    else if (m === 12 && !bornLeapAdar && isHebLeap(hy)) m = 13; // regular Adar → Adar II (common custom)
+    const d = Math.min(hb.day, monthLength(hy, m));
+    const ds = dateStrFromRd(rdFromHebrew(hy, m, d));
+    if (Number(ds.slice(0, 4)) === y) return { date: ds, hy };
+  }
+  return null;
+}
+
 export function birthdayInYear(person, y) {
+  const hb = hebrewBirth(person);
+  if (hb) {
+    const r = hebrewBirthdayInYear(hb, y);
+    if (r) return r.date;
+  }
   let m = person.month;
   let d = person.day;
   if (m === 2 && d === 29 && !isLeapYear(y)) {
@@ -64,8 +92,15 @@ export function nextBirthday(person, from) {
   const y = Number(from.slice(0, 4));
   const thisYear = birthdayInYear(person, y);
   const date = thisYear >= from ? thisYear : birthdayInYear(person, y + 1);
-  const age = person.year ? Number(date.slice(0, 4)) - person.year : null;
-  return { date, age };
+  return { date, age: ageOn(person, date) };
+}
+
+// Age the person turns on a given birthday date.
+export function ageOn(person, date) {
+  if (!person.year) return null;
+  const hb = hebrewBirth(person);
+  if (hb) return hebrewFromDateStr(date).year - hb.year;
+  return Number(date.slice(0, 4)) - person.year;
 }
 
 export function isBirthdayOn(person, d) {

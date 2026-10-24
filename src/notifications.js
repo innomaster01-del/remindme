@@ -33,6 +33,7 @@ export async function configure(t) {
     await Notifications.setNotificationCategoryAsync('task', [
       { identifier: 'done', buttonTitle: t('notif.actDone'), options: { opensAppToForeground: true } },
       { identifier: 'snooze', buttonTitle: t('notif.actSnooze'), options: { opensAppToForeground: true } },
+      { identifier: 'tomorrow', buttonTitle: t('notif.actTomorrow'), options: { opensAppToForeground: true } },
     ]);
   } catch (e) {
     // categories / channels are best-effort
@@ -60,7 +61,13 @@ export async function sync(plan, force = false) {
   const sig = planSignature(plan);
   if (!force && sig === lastSig) return plan.items.length;
   lastSig = sig;
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Cancel everything we scheduled before (but leave a pending test notification alone).
+  try {
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(pending.filter((n) => n.identifier !== 'test').map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+  } catch (e) {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  }
   for (const item of plan.items) {
     try {
       await Notifications.scheduleNotificationAsync({
@@ -83,6 +90,16 @@ export async function sync(plan, force = false) {
     }
   }
   return plan.items.length;
+}
+
+// A one-off notification a few seconds from now, to check that reminders really arrive.
+export async function sendTest(t) {
+  if (!supported) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier: 'test',
+    content: { title: t('reliable.testTitle'), body: t('reliable.testBody'), sound: true, data: { kind: 'test' } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, channelId: CHANNEL },
+  });
 }
 
 export function onResponse(handler) {

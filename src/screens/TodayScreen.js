@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../store';
 import { useI18n, Row, Txt, Section, Empty, Banner, Button, IconBtn, Icon, haptic } from '../ui';
-import { TaskRow, Group, BirthdayRow, ListCard } from '../components';
+import { TaskRow, Group, BirthdayRow, ListCard, QuickAdd } from '../components';
 import { C, R, ff, skyFor, shadow } from '../theme';
 import { todayStr, addDays, diffDays, parseDate } from '../logic/dates';
 import { isRecurring, nextBirthday, isDoneOn } from '../logic/recurrence';
@@ -155,6 +155,7 @@ export default function TodayScreen({ nav, date, setDate, notifState, now }) {
 
       <Hero date={date} isToday={isToday} hour={now.getHours()} items={items} label={label} />
       <WeekStrip today={today} date={date} setDate={setDate} data={data} />
+      {mods.tasks ? <QuickAdd defaultDate={date} /> : null}
       {!isToday && (date < today || date > addDays(today, 6)) ? (
         <Row style={{ marginTop: 10 }}><Button small variant="soft" icon="today-outline" title={t('today.backToToday')} onPress={() => setDate(today)} /></Row>
       ) : null}

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, ScrollView, Alert, Share, Pressable, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Check, IconBtn, Icon, Banner, Sheet } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Check, IconBtn, Icon, Banner, Sheet, useToast, haptic } from '../ui';
 import { ListCard, Group } from '../components';
 import { DateField, TimeField, DatePickerSheet } from '../pickers';
 import { C, R, ff, shadow } from '../theme';
@@ -83,6 +83,7 @@ export function ListEditor({ nav, params }) {
 export function ListDetail({ nav, params }) {
   const { data, actions } = useStore();
   const { t, f, dir } = useI18n();
+  const toast = useToast();
   const list = data.lists.find((x) => x.id === params.id);
   const [name, setName] = useState('');
   const [qty, setQty] = useState('');
@@ -106,6 +107,14 @@ export function ListDetail({ nav, params }) {
     : [];
 
   const add = (n = name) => {
+    // Several items pasted at once (one per line or comma-separated) → add them all.
+    const parts = n.split(/[\n,،;]+/).map((x) => x.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      actions.addItems(list.id, parts);
+      setName(''); setQty(''); setMsg(null);
+      haptic('success');
+      return;
+    }
     const clean = n.trim();
     if (!clean) return;
     if (inList.has(clean.toLowerCase())) setMsg(t('list.dupItem', { name: clean })); else setMsg(null);
@@ -125,7 +134,10 @@ export function ListDetail({ nav, params }) {
 
   const remove = () => Alert.alert(t('common.confirmDelete'), list.title, [
     { text: t('common.cancel'), style: 'cancel' },
-    { text: t('common.delete'), style: 'destructive', onPress: () => { actions.deleteList(list.id); nav.pop(); } },
+    { text: t('common.delete'), style: 'destructive', onPress: () => {
+      const snap = list; actions.deleteList(list.id); nav.pop();
+      toast({ text: `${t('toast.deleted')}: ${snap.title}`, icon: 'trash', action: t('toast.undo'), onAction: () => actions.restoreList(snap) });
+    } },
   ]);
 
   const ItemRow = ({ item }) => (
@@ -139,7 +151,11 @@ export function ListDetail({ nav, params }) {
           <Txt v="tiny" style={{ color: item.checked ? C.faint : C.shop, ...ff(700) }}>{item.qty}</Txt>
         </View>
       ) : null}
-      <IconBtn name="close" size={18} color={C.faint} onPress={() => actions.deleteItem(list.id, item.id)} label={t('common.delete')} />
+      <IconBtn name="close" size={18} color={C.faint} onPress={() => {
+        const idx = list.items.findIndex((i) => i.id === item.id);
+        actions.deleteItem(list.id, item.id);
+        toast({ text: `${t('toast.deleted')}: ${item.name}`, action: t('toast.undo'), onAction: () => actions.restoreItem(list.id, item, idx) });
+      }} label={t('common.delete')} />
     </Row>
   );
 
@@ -169,14 +185,15 @@ export function ListDetail({ nav, params }) {
           <TextInput
             ref={inputRef}
             value={name}
-            onChangeText={(v) => { setName(v); setMsg(null); }}
+            onChangeText={(v) => { if (v.includes('\n')) { add(v); return; } setName(v); setMsg(null); }}
+            multiline
             placeholder={t('list.addItemPh')}
             placeholderTextColor={C.faint}
             onSubmitEditing={() => add()}
             blurOnSubmit={false}
             submitBehavior="submit"
             returnKeyType="next"
-            style={{ flex: 1, fontSize: 17, paddingHorizontal: 8, paddingVertical: 10, color: C.ink, textAlign: dir.align, writingDirection: dir.writing }}
+            style={{ flex: 1, fontSize: 17, paddingHorizontal: 8, paddingVertical: 10, maxHeight: 120, color: C.ink, textAlign: dir.align, writingDirection: dir.writing }}
           />
           <TextInput
             value={qty}
@@ -196,7 +213,7 @@ export function ListDetail({ nav, params }) {
       </View>
       {msg ? <Txt v="small" style={{ color: C.shop, marginTop: 8 }}>{msg}</Txt> : null}
 
-      {list.items.length === 0 ? <Empty icon="basket-outline" body={t('list.emptyItems')} /> : null}
+      {list.items.length === 0 ? <Empty icon="basket-outline" color={C.shop} body={`${t('list.emptyItems')}\n${t('list.pasteHint')}`} /> : null}
 
       {unchecked.length ? (
         <View style={{ marginTop: 14 }}>

@@ -175,6 +175,29 @@ export function StoreProvider({ children }) {
         return newId;
       },
 
+      // ----- undo -----
+      restoreTask: (task) => up((d) => ({ ...d, tasks: replaceIn(d.tasks, task) })),
+      restorePerson: (p) => up((d) => ({ ...d, people: replaceIn(d.people, p) })),
+      restoreList: (l) => up((d) => ({ ...d, lists: replaceIn(d.lists, l) })),
+      restoreItem: (listId, item, index) => upList(listId, (l) => {
+        const items = l.items.filter((i) => i.id !== item.id);
+        items.splice(Math.min(index, items.length), 0, item);
+        return { ...l, items };
+      }),
+      addItems: (listId, names) => up((d) => {
+        const hist = { ...d.itemHistory };
+        const fresh = [];
+        for (const raw of names) {
+          const clean = raw.trim();
+          if (!clean) continue;
+          const key = norm(clean);
+          hist[key] = { name: clean, count: (hist[key]?.count || 0) + 1, last: Date.now() };
+          fresh.push({ id: uid(), name: clean, qty: '', checked: false });
+        }
+        if (!fresh.length) return d;
+        return { ...d, itemHistory: hist, lists: d.lists.map((l) => (l.id === listId ? { ...l, status: 'open', items: [...l.items, ...fresh] } : l)) };
+      }),
+
       // ----- whole data -----
       replaceAll: (newData) => setData(migrate(newData)),
       resetAll: () => setData((d) => ({ ...DEFAULT_DATA, settings: { ...DEFAULT_DATA.settings, lang: d.settings.lang, onboarded: true } })),

@@ -317,6 +317,62 @@ function merge(a, b) {
 }
 merge(he, EXTRA.he); merge(en, EXTRA.en); merge(ru, EXTRA.ru);
 
+// ---------- v1.2 additions ----------
+const EXTRA2 = {
+  he: {
+    quick: { ph: 'מה צריך לזכור? למשל: מחר ב־8 להתקשר לאמא', added: 'נוספה משימה: {when}', noDate: 'בלי תאריך' },
+    presets: { morning: 'בוקר', noon: 'צהריים', evening: 'ערב' },
+    toast: { deleted: 'נמחק', undo: 'ביטול', done: 'בוצע' },
+    reliable: {
+      title: 'תזכורות אמינות', test: 'שליחת התראת בדיקה', testSent: 'התראת בדיקה תגיע בעוד 5 שניות',
+      testTitle: '🔔 בדיקה', testBody: 'מעולה! התזכורות עובדות',
+      battery: 'בחלק מהטלפונים (שיאומי, סמסונג ועוד) חיסכון בסוללה מעכב תזכורות. בהגדרות האפליקציה ← סוללה, בחרו ״ללא הגבלה״.',
+      openApp: 'פתיחת הגדרות האפליקציה',
+    },
+    notif: { actTomorrow: 'מחר', bdayWeekTitle: '📅 בעוד שבוע יום ההולדת של {name}', bdayWeekBody: 'יש זמן לתכנן מתנה' },
+    person: {
+      hebrew: 'לפי התאריך העברי', hebrewHint: 'התזכורת תגיע כל שנה בתאריך העברי', hebrewNeedsYear: 'כדי להזכיר לפי התאריך העברי צריך שנת לידה',
+      hebrewBorn: 'תאריך לידה עברי: {date}', weekBefore: 'שבוע לפני', hebTag: 'עברי',
+    },
+    list: { pasteHint: 'אפשר להדביק כמה פריטים בבת אחת, כל אחד בשורה או מופרדים בפסיק' },
+  },
+  en: {
+    quick: { ph: 'What to remember? e.g. call mom tomorrow at 8', added: 'Task added: {when}', noDate: 'no date' },
+    presets: { morning: 'Morning', noon: 'Noon', evening: 'Evening' },
+    toast: { deleted: 'Deleted', undo: 'Undo', done: 'Done' },
+    reliable: {
+      title: 'Reliable reminders', test: 'Send a test notification', testSent: 'A test notification will arrive in 5 seconds',
+      testTitle: '🔔 Test', testBody: 'Great! Reminders are working',
+      battery: 'On some phones (Xiaomi, Samsung and others) battery saving delays reminders. In app settings → Battery, choose “Unrestricted”.',
+      openApp: 'Open app settings',
+    },
+    notif: { actTomorrow: 'Tomorrow', bdayWeekTitle: '📅 {name}’s birthday is in a week', bdayWeekBody: 'There’s time to plan a gift' },
+    person: {
+      hebrew: 'By Hebrew date', hebrewHint: 'The reminder comes each year on the Hebrew date', hebrewNeedsYear: 'A birth year is needed for Hebrew-date reminders',
+      hebrewBorn: 'Hebrew birth date: {date}', weekBefore: 'A week before', hebTag: 'Hebrew',
+    },
+    list: { pasteHint: 'You can paste several items at once — one per line or separated by commas' },
+  },
+  ru: {
+    quick: { ph: 'Что не забыть? Например: завтра в 8 позвонить маме', added: 'Задача добавлена: {when}', noDate: 'без даты' },
+    presets: { morning: 'Утро', noon: 'День', evening: 'Вечер' },
+    toast: { deleted: 'Удалено', undo: 'Отменить', done: 'Готово' },
+    reliable: {
+      title: 'Надёжные напоминания', test: 'Отправить тестовое уведомление', testSent: 'Тестовое уведомление придёт через 5 секунд',
+      testTitle: '🔔 Проверка', testBody: 'Отлично! Напоминания работают',
+      battery: 'На некоторых телефонах (Xiaomi, Samsung и др.) экономия батареи задерживает напоминания. В настройках приложения → Батарея выберите «Без ограничений».',
+      openApp: 'Открыть настройки приложения',
+    },
+    notif: { actTomorrow: 'Завтра', bdayWeekTitle: '📅 Через неделю день рождения: {name}', bdayWeekBody: 'Есть время выбрать подарок' },
+    person: {
+      hebrew: 'По еврейскому календарю', hebrewHint: 'Напоминание будет каждый год по еврейской дате', hebrewNeedsYear: 'Для еврейской даты нужен год рождения',
+      hebrewBorn: 'Еврейская дата рождения: {date}', weekBefore: 'За неделю', hebTag: 'евр.',
+    },
+    list: { pasteHint: 'Можно вставить сразу несколько товаров — каждый с новой строки или через запятую' },
+  },
+};
+merge(he, EXTRA2.he); merge(en, EXTRA2.en); merge(ru, EXTRA2.ru);
+
 export const STRINGS = { he, en, ru };
 export const LANGS = [
   { code: 'he', label: 'עברית', rtl: true },

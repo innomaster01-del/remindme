@@ -1,9 +1,12 @@
-import React from 'react';
-import { View, Pressable, Linking } from 'react-native';
-import { useI18n, Row, Txt, Check, Icon, Card, IconBtn } from './ui';
+import React, { useState } from 'react';
+import { View, Pressable, Linking, TextInput } from 'react-native';
+import { useI18n, Row, Txt, Check, Icon, Card, IconBtn, haptic, useToast } from './ui';
+import { useStore } from './store';
+import { parseQuick } from './logic/quickparse';
+import { todayStr, addDays as addD, diffDays } from './logic/dates';
 import { C, R, ff } from './theme';
-import { isDoneOn, isRecurring, nextBirthday } from './logic/recurrence';
-import { diffDays } from './logic/dates';
+import { isDoneOn, isRecurring, nextBirthday, hebrewBirth } from './logic/recurrence';
+import { formatHebrew } from './logic/hebrew';
 
 function Meta({ icon, text, color }) {
   return (
@@ -60,7 +63,8 @@ export function initials(name) {
 }
 
 export function BirthdayRow({ person, from, onPress, compact }) {
-  const { t, f } = useI18n();
+  const { t, f, lang } = useI18n();
+  const hb = hebrewBirth(person);
   const { date, age } = nextBirthday(person, from);
   const n = diffDays(from, date);
   const isToday = n === 0;
@@ -78,7 +82,8 @@ export function BirthdayRow({ person, from, onPress, compact }) {
         <View style={{ flex: 1, gap: 3 }}>
           <Txt v="strong" numberOfLines={1}>{person.name}</Txt>
           <Row gap={10} style={{ flexWrap: 'wrap' }}>
-            <Txt v="tiny" style={{ ...ff(400) }}>{f.dayMonth(person.day, person.month)}</Txt>
+            <Txt v="tiny" style={{ ...ff(400) }}>{hb ? f.short(date) : f.dayMonth(person.day, person.month)}</Txt>
+            {hb ? <Txt v="tiny" style={{ color: C.holiday, ...ff(500) }}>{formatHebrew(lang, hb, { withYear: false })}</Txt> : null}
             {age ? <Txt v="tiny" style={{ color: C.bday }}>{t('person.turns', { n: age })}</Txt> : null}
           </Row>
         </View>
@@ -157,5 +162,69 @@ export function AgendaRow({ color, icon, title, sub, onPress, done, right }) {
         {right}
       </Row>
     </Pressable>
+  );
+}
+
+// Free-text quick add: "מחר ב-8 להתקשר לאמא" → task with date + time.
+export function QuickAdd({ defaultDate }) {
+  const { t, f, dir } = useI18n();
+  const { actions } = useStore();
+  const toast = useToast();
+  const [text, setText] = useState('');
+  const [focus, setFocus] = useState(false);
+  const parsed = text.trim() ? parseQuick(text) : null;
+  const date = parsed ? (parsed.date || defaultDate || null) : null;
+  const today = todayStr();
+  const dateLabel = (d) => (d === today ? t('common.today') : d === addD(today, 1) ? t('common.tomorrow') : f.short(d));
+  const submit = () => {
+    if (!parsed || !parsed.title) return;
+    haptic('success');
+    actions.saveTask({
+      title: parsed.title, notes: '', date, time: parsed.time, priority: 'normal',
+      repeat: { type: 'none', days: [] }, status: 'open', doneDates: [],
+    });
+    const when = [date ? dateLabel(date) : t('quick.noDate'), parsed.time].filter(Boolean).join(' ');
+    toast({ text: t('quick.added', { when }), icon: 'checkmark-circle' });
+    setText('');
+  };
+  return (
+    <View style={{ marginTop: 14 }}>
+      <View style={[{
+        flexDirection: dir.row, alignItems: 'center', gap: 8, backgroundColor: C.card, borderRadius: R.lg,
+        paddingHorizontal: 14, borderWidth: 1.5, borderColor: focus ? C.primary : 'transparent',
+      }, focus ? null : { shadowColor: C.shadow, shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }]}>
+        <Icon name="sparkles" size={18} color={C.primary} />
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
+          placeholder={t('quick.ph')}
+          placeholderTextColor={C.faint}
+          onSubmitEditing={submit}
+          returnKeyType="done"
+          blurOnSubmit={false}
+          submitBehavior="submit"
+          selectionColor={C.primary}
+          style={{ flex: 1, paddingVertical: 14, fontSize: 15.5, color: C.ink, textAlign: dir.align, writingDirection: dir.writing, ...ff(400) }}
+        />
+        {parsed && parsed.title ? <IconBtn name="arrow-up" size={20} color={C.onPrimary} bg={C.primary} onPress={submit} style={{ width: 34, height: 34 }} /> : null}
+      </View>
+      {parsed && (parsed.date || parsed.time) ? (
+        <Row gap={8} style={{ marginTop: 8, paddingHorizontal: 6 }}>
+          {date ? (
+            <Row gap={4} style={{ backgroundColor: C.primarySoft, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Icon name="calendar-clear" size={13} color={C.primary} /><Txt v="tiny" style={{ color: C.primary, ...ff(600) }}>{dateLabel(date)}</Txt>
+            </Row>
+          ) : null}
+          {parsed.time ? (
+            <Row gap={4} style={{ backgroundColor: C.primarySoft, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Icon name="alarm" size={13} color={C.primary} /><Txt v="tiny" style={{ color: C.primary, ...ff(600) }}>{parsed.time}</Txt>
+            </Row>
+          ) : null}
+          <Txt v="tiny" style={{ flex: 1, ...ff(400) }} numberOfLines={1}>{parsed.title}</Txt>
+        </Row>
+      ) : null}
+    </View>
   );
 }
