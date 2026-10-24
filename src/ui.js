@@ -392,7 +392,8 @@ export function ToastHost({ toast, onClose }) {
 }
 
 // ---------- swipe actions ----------
-// Swipe toward the reading direction's start = done, toward the end = delete (mirrored in Hebrew).
+// Optional shortcut for those who know it: swipe = done / delete. Nothing is visible until you swipe,
+// and every action is also available by tapping. Mirrored in Hebrew.
 const SWIPE_AT = 88;
 export function SwipeRow({ children, onDone, onDelete, doneIcon = 'checkmark' }) {
   const { dir } = useI18n();
@@ -435,13 +436,13 @@ export function SwipeRow({ children, onDone, onDelete, doneIcon = 'checkmark' })
   return (
     <View>
       {onDone ? (
-        <Animated.View style={[layer, { [pos ? 'left' : 'right']: 0, width: doneW, opacity: showDone, backgroundColor: C.primary, alignItems: pos ? 'flex-start' : 'flex-end' }]}>
-          <View style={{ width: 60, alignItems: 'center' }}><Icon name={doneIcon} size={22} color={C.onPrimary} /></View>
+        <Animated.View style={[layer, { [pos ? 'left' : 'right']: 0, width: doneW, opacity: showDone, backgroundColor: C.primarySoft, alignItems: pos ? 'flex-start' : 'flex-end' }]}>
+          <View style={{ width: 60, alignItems: 'center' }}><Icon name={doneIcon} size={20} color={C.primary} /></View>
         </Animated.View>
       ) : null}
       {onDelete ? (
-        <Animated.View style={[layer, { [pos ? 'right' : 'left']: 0, width: delW, opacity: showDel, backgroundColor: C.danger, alignItems: pos ? 'flex-end' : 'flex-start' }]}>
-          <View style={{ width: 60, alignItems: 'center' }}><Icon name="trash" size={21} color="#FFFFFF" /></View>
+        <Animated.View style={[layer, { [pos ? 'right' : 'left']: 0, width: delW, opacity: showDel, backgroundColor: C.sunken, alignItems: pos ? 'flex-end' : 'flex-start' }]}>
+          <View style={{ width: 60, alignItems: 'center' }}><Icon name="trash-outline" size={20} color={C.muted} /></View>
         </Animated.View>
       ) : null}
       <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: x }] }}>{children}</Animated.View>
