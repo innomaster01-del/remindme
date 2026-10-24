@@ -68,7 +68,10 @@
         "expo-build-properties",
         {
           "android": {
-            "extraProguardRules": "# WorkManager / Room (used by notifications and the widget) must survive R8\n-keep class androidx.work.** { *; }\n-keep class androidx.work.impl.WorkDatabase_Impl { *; }\n-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class androidx.room.** { *; }\n-keep class androidx.startup.** { *; }\n-dontwarn androidx.work.**"
+            "extraProguardRules": "# WorkManager / Room (used by notifications and the widget) must survive R8\n-keep class androidx.work.** { *; }\n-keep class androidx.work.impl.WorkDatabase_Impl { *; }\n-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class androidx.room.** { *; }\n-keep class androidx.startup.** { *; }\n-dontwarn androidx.work.**",
+            "enableMinifyInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "enableProguardInReleaseBuilds": false
           }
         }
       ]
