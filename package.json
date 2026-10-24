@@ -1,0 +1,16 @@
+{
+  "name": "remindme",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "setup": "npx expo install react react-native expo-notifications @react-native-async-storage/async-storage react-native-safe-area-context @expo/vector-icons",
+    "start": "expo start",
+    "start:tunnel": "expo start --tunnel",
+    "android:apk": "eas build -p android --profile preview",
+    "ios:testflight": "eas build -p ios --profile production --auto-submit"
+  },
+  "dependencies": {
+    "expo": "~57.0.0"
+  }
+}
