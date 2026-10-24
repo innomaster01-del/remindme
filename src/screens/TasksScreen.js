@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Segmented, useToast } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Segmented, useToast, IconBtn } from '../ui';
 import { QuickAdd, Subtasks } from '../components';
+import { splitTitle } from '../logic/listtext';
 import { TaskRow, Group } from '../components';
 import { DateField, TimeField } from '../pickers';
 import { C, ff, shadow } from '../theme';
@@ -22,16 +23,18 @@ export default function TasksScreen({ nav, now }) {
   const done = data.tasks.filter((x) => x.status === 'done').sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0));
   const byDate = (a, b) => (a.date || '').localeCompare(b.date || '') || (a.time || '99').localeCompare(b.time || '99');
 
+  const rest = open.filter((x) => !x.pinned);
   const groups = [
-    { key: 'overdue', title: t('task.overdue'), color: C.high, items: open.filter((x) => !isRecurring(x) && x.date && x.date < today) },
-    { key: 'today', title: t('common.today'), color: C.primary, items: open.filter((x) => x.date && occursOn(x, today)) },
-    { key: 'tomorrow', title: t('common.tomorrow'), color: C.primary, items: open.filter((x) => x.date && !occursOn(x, today) && occursOn(x, tomorrow)) },
-    { key: 'later', title: t('task.upcoming'), color: C.muted, items: open.filter((x) => x.date && x.date > tomorrow && !occursOn(x, today) && !occursOn(x, tomorrow)) },
-    { key: 'recurring', title: t('task.repeat'), color: C.muted, items: open.filter((x) => isRecurring(x) && x.date && x.date <= tomorrow && !occursOn(x, today) && !occursOn(x, tomorrow)) },
-    { key: 'nodate', title: t('task.noDate'), color: C.muted, items: open.filter((x) => !x.date) },
+    { key: 'pinned', title: t('notes.pinned'), color: C.primary, items: open.filter((x) => x.pinned) },
+    { key: 'overdue', title: t('task.overdue'), color: C.high, items: rest.filter((x) => !isRecurring(x) && x.date && x.date < today) },
+    { key: 'today', title: t('common.today'), color: C.primary, items: rest.filter((x) => x.date && occursOn(x, today)) },
+    { key: 'tomorrow', title: t('common.tomorrow'), color: C.primary, items: rest.filter((x) => x.date && !occursOn(x, today) && occursOn(x, tomorrow)) },
+    { key: 'later', title: t('task.upcoming'), color: C.muted, items: rest.filter((x) => x.date && x.date > tomorrow && !occursOn(x, today) && !occursOn(x, tomorrow)) },
+    { key: 'recurring', title: t('task.repeat'), color: C.muted, items: rest.filter((x) => isRecurring(x) && x.date && x.date <= tomorrow && !occursOn(x, today) && !occursOn(x, tomorrow)) },
+    { key: 'nodate', title: t('task.noDate'), color: C.muted, items: rest.filter((x) => !x.date) },
   ].map((g) => ({ ...g, items: g.items.sort(byDate) }));
 
-  const rowDate = (x, key) => (key === 'today' ? today : key === 'tomorrow' ? tomorrow : x.date);
+  const rowDate = (x, key) => (key === 'today' || (key === 'pinned' && occursOn(x, today)) ? today : key === 'tomorrow' ? tomorrow : x.date);
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, paddingBottom: 120 }}>
@@ -92,15 +95,18 @@ export function TaskEditor({ nav, params }) {
   });
   const [err, setErr] = useState(null);
   const [showSteps, setShowSteps] = useState(false);
+  // The task is written like a note: the first line is the title, the rest is free text.
+  const [text, setText] = useState(() => (existing ? [existing.title, existing.notes].filter(Boolean).join('\n') : ''));
   const set = (patch) => setTask((x) => ({ ...x, ...patch }));
   const repeat = task.repeat || { type: 'none' };
 
   const save = () => {
-    if (!task.title.trim()) { setErr(t('task.titleRequired')); return; }
+    const { title, body } = splitTitle(text);
+    if (!title) { setErr(t('task.titleRequired')); return; }
     let r = repeat;
     if (r.type === 'weekly' && !(r.days || []).length) r = { ...r, days: [weekday(task.date || todayStr())] };
     if (r.type !== 'none' && !task.date) { set({ date: todayStr() }); }
-    actions.saveTask({ ...task, title: task.title.trim(), repeat: r, date: r.type !== 'none' && !task.date ? todayStr() : task.date, snoozeUntil: null });
+    actions.saveTask({ ...task, title, notes: body, repeat: r, date: r.type !== 'none' && !task.date ? todayStr() : task.date, snoozeUntil: null });
     nav.pop();
   };
   // Delete right away; the toast offers undo.
@@ -115,12 +121,16 @@ export function TaskEditor({ nav, params }) {
     <Page
       title={existing ? t('task.edit') : t('task.new')}
       onBack={nav.pop}
-      right={existing ? <Button small variant="danger" icon="trash-outline" title={t('common.delete')} onPress={remove} /> : null}
+      right={<Row gap={2}>
+        {existing ? <IconBtn name={task.pinned ? 'pin' : 'pin-outline'} color={task.pinned ? C.primary : C.ink} label={t('notes.pin')}
+          onPress={() => { set({ pinned: !task.pinned }); actions.togglePinTask(existing.id); }} /> : null}
+        {existing ? <IconBtn name="trash-outline" color={C.danger} onPress={remove} label={t('common.delete')} /> : null}
+      </Row>}
       footer={<Button title={t('common.save')} icon="checkmark" onPress={save} />}
     >
-      <Field>
-        <Input value={task.title} onChangeText={(v) => { set({ title: v }); setErr(null); }} placeholder={t('task.titlePh')}
-          autoFocus={!existing} style={{ fontSize: 19, ...ff(600) }} returnKeyType="done" />
+      <Field hint={t('task.padHint')}>
+        <Input value={text} onChangeText={(v) => { setText(v); setErr(null); }} placeholder={t('task.padPh')}
+          autoFocus={!existing} multiline style={{ fontSize: 17, lineHeight: 25, minHeight: 170, ...ff(400) }} />
         {err ? <Txt v="small" style={{ color: C.danger }}>{err}</Txt> : null}
       </Field>
       <Field label={t('common.date')}>
@@ -171,9 +181,6 @@ export function TaskEditor({ nav, params }) {
           <Button small variant="soft" icon="list" title={t('sub.add')} onPress={() => setShowSteps(true)} />
         </Row>
       )}
-      <Field label={t('common.notes')}>
-        <Input value={task.notes} onChangeText={(v) => set({ notes: v })} placeholder={t('task.notesPh')} multiline />
-      </Field>
       {existing && !isRecurring(existing) && existing.status === 'open' ? (
         <Button variant="soft" icon="arrow-redo-outline" title={t('task.postpone')}
           onPress={() => { actions.postponeTask(existing.id, addDays(existing.date && existing.date > todayStr() ? existing.date : todayStr(), 1)); nav.pop(); }} />

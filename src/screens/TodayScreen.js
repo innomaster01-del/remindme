@@ -79,7 +79,7 @@ function Hero({ date, isToday, hour, items, label }) {
   );
 }
 
-function WeekStrip({ today, date, setDate, data }) {
+function WeekStrip({ today, date, onPick, data }) {
   const { f, dir } = useI18n();
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
   return (
@@ -89,7 +89,7 @@ function WeekStrip({ today, date, setDate, data }) {
         const it = dayItems(data, d);
         const has = it.tasks.length || it.people.length || it.lists.length;
         return (
-          <Pressable key={d} onPress={() => { haptic(); setDate(d); }} style={({ pressed }) => [{
+          <Pressable key={d} onPress={() => { haptic(); onPick(d); }} style={({ pressed }) => [{
             flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: R.md, gap: 2,
             backgroundColor: sel ? C.primary : C.card, transform: [{ scale: pressed ? 0.96 : 1 }],
           }, sel ? null : shadow(1)]}>
@@ -103,7 +103,7 @@ function WeekStrip({ today, date, setDate, data }) {
   );
 }
 
-export default function TodayScreen({ nav, date, setDate, notifState, now }) {
+export default function TodayScreen({ nav, date, setDate, notifState, now, openDay }) {
   const { data, actions } = useStore();
   const { t, f } = useI18n();
   const insets = useSafeAreaInsets();
@@ -150,7 +150,7 @@ export default function TodayScreen({ nav, date, setDate, notifState, now }) {
       </Row>
 
       <Hero date={date} isToday={isToday} hour={now.getHours()} items={items} label={label} />
-      <WeekStrip today={today} date={date} setDate={setDate} data={data} />
+      <WeekStrip today={today} date={date} onPick={openDay} data={data} />
       {mods.tasks ? <QuickAdd defaultDate={date} /> : null}
       {!isToday && (date < today || date > addDays(today, 6)) ? (
         <Row style={{ marginTop: 10 }}><Button small variant="soft" icon="today-outline" title={t('today.backToToday')} onPress={() => setDate(today)} /></Row>
@@ -232,12 +232,14 @@ export function AddSheetContent({ onPick, mods = {} }) {
     { key: 'task', icon: 'checkmark-circle', color: C.primary, soft: C.primarySoft, label: t('add.task') },
     { key: 'list', icon: 'basket', color: C.shop, soft: C.shopSoft, label: t('add.list') },
     { key: 'person', icon: 'gift', color: C.bday, soft: C.bdaySoft, label: t('add.person') },
-  ].filter((o) => mods[{ task: 'tasks', list: 'shopping', person: 'birthdays' }[o.key]] !== false);
+    { key: 'note', icon: 'document-text', color: C.primary, soft: C.primarySoft, label: t('add.note') },
+  ].filter((o) => mods[{ task: 'tasks', list: 'shopping', person: 'birthdays', note: 'notes' }[o.key]] !== false);
   return (
-    <View style={{ flexDirection: dir.row, gap: 10 }}>
+    <View style={{ flexDirection: dir.row, gap: 10, flexWrap: 'wrap' }}>
       {opts.map((o) => (
         <Pressable key={o.key} onPress={() => { haptic(); onPick(o.key); }} style={({ pressed }) => [{
-          flex: 1, backgroundColor: C.card, borderRadius: R.lg, paddingVertical: 20, alignItems: 'center', gap: 12,
+          width: opts.length > 3 ? '48%' : undefined, flex: opts.length > 3 ? undefined : 1,
+          backgroundColor: C.card, borderRadius: R.lg, paddingVertical: 18, alignItems: 'center', gap: 10,
           transform: [{ scale: pressed ? 0.96 : 1 }],
         }, shadow(1)]}>
           <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: o.soft, alignItems: 'center', justifyContent: 'center' }}>

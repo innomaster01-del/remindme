@@ -11,7 +11,13 @@ export const supported = Platform.OS === 'ios' || Platform.OS === 'android';
 const CHANNEL = 'reminders';
 let lastSig = null;
 
-export async function configure(t) {
+// Reminder sounds bundled with the app (assets/sounds). Android fixes a channel's sound when it
+// is created, so every sound gets its own channel.
+export const SOUNDS = ['default', 'chime', 'bell', 'soft', 'digital', 'silent'];
+const channelFor = (sound) => (!sound || sound === 'default' ? CHANNEL : `${CHANNEL}_${sound}`);
+const contentSound = (sound) => (!sound || sound === 'default' ? true : sound === 'silent' ? false : `${sound}.wav`);
+
+export async function configure(t, sound = 'default') {
   if (!supported) return;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -29,6 +35,15 @@ export async function configure(t) {
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 200, 120, 200],
       });
+      if (sound && sound !== 'default') {
+        await Notifications.setNotificationChannelAsync(channelFor(sound), {
+          name: `${t('settings.notifications')} · ${t('sound.' + sound)}`,
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 200, 120, 200],
+          enableVibrate: true,
+          sound: sound === 'silent' ? null : `${sound}.wav`,
+        });
+      }
     }
     await Notifications.setNotificationCategoryAsync('task', [
       { identifier: 'done', buttonTitle: t('notif.actDone'), options: { opensAppToForeground: true } },
@@ -56,9 +71,9 @@ export async function requestPermission() {
 }
 
 // Cancel everything and schedule the plan. Skips work when nothing changed.
-export async function sync(plan, force = false) {
+export async function sync(plan, sound = 'default', force = false) {
   if (!supported) return 0;
-  const sig = planSignature(plan);
+  const sig = sound + '\n' + planSignature(plan);
   if (!force && sig === lastSig) return plan.items.length;
   lastSig = sig;
   // Cancel everything we scheduled before (but leave a pending test notification alone).
@@ -76,13 +91,13 @@ export async function sync(plan, force = false) {
           title: item.title,
           body: item.body,
           data: item.data,
-          sound: true,
+          sound: contentSound(sound),
           categoryIdentifier: item.data.kind === 'task' ? 'task' : undefined,
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: item.when,
-          channelId: CHANNEL,
+          channelId: channelFor(sound),
         },
       });
     } catch (e) {
@@ -93,12 +108,13 @@ export async function sync(plan, force = false) {
 }
 
 // A one-off notification a few seconds from now, to check that reminders really arrive.
-export async function sendTest(t) {
+export async function sendTest(t, sound = 'default', seconds = 5) {
   if (!supported) return;
+  await configure(t, sound);
   await Notifications.scheduleNotificationAsync({
     identifier: 'test',
-    content: { title: t('reliable.testTitle'), body: t('reliable.testBody'), sound: true, data: { kind: 'test' } },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, channelId: CHANNEL },
+    content: { title: t('reliable.testTitle'), body: t('reliable.testBody'), sound: contentSound(sound), data: { kind: 'test' } },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: channelFor(sound) },
   });
 }
 

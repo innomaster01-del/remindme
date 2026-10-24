@@ -27,6 +27,12 @@ tap_text "עברית" 1-start
 dump 2-after-language
 tap_text "אחר כך" 2-after-language
 dump 3-home
+tap_text "פתקים" 3-home
+dump 4-notes
+tap_text "יומן" 4-notes
+dump 5-calendar
+tap_text "קניות" 5-calendar
+dump 6-shopping
 adb exec-out screencap -p > out/smoke.png || true
 
 if adb shell pidof $APP >/dev/null; then echo APP_RUNNING > $OUT/status.txt; else echo APP_NOT_RUNNING > $OUT/status.txt; fi

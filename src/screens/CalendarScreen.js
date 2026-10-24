@@ -18,7 +18,7 @@ export function dayItems(data, d) {
   };
 }
 
-export default function CalendarScreen({ nav, now, onAdd, selected, setSelected }) {
+export default function CalendarScreen({ nav, now, onAdd, selected, setSelected, openDay }) {
   const { data, actions } = useStore();
   const { t, f, dir, lang } = useI18n();
   const insets = useSafeAreaInsets();
@@ -115,7 +115,7 @@ export default function CalendarScreen({ nav, now, onAdd, selected, setSelected 
               const dayNum = Number(d.slice(8));
               const past = d < today;
               return (
-                <Pressable key={d} onPress={() => { haptic(); setSelected(d); }} style={{ flex: 1, height: 62, alignItems: 'center', paddingTop: 4 }}>
+                <Pressable key={d} onPress={() => { haptic(); setSelected(d); openDay(d); }} style={{ flex: 1, height: 62, alignItems: 'center', paddingTop: 4 }}>
                   <View style={{
                     width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
                     backgroundColor: isSel ? C.primary : isToday ? C.primarySoft : mk.holiday?.major ? C.holidaySoft : 'transparent',

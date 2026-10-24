@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useRef, useState } from 'react';
+import React, { createContext, useContext, useRef, useState, useMemo } from 'react';
 import {
-  View, Text, Pressable, TextInput, Modal, Switch, ScrollView, I18nManager, Platform, KeyboardAvoidingView, Animated,
+  View, Text, Pressable, TextInput, Modal, Switch, ScrollView, I18nManager, Platform, KeyboardAvoidingView, Animated, PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -387,6 +387,64 @@ export function ToastHost({ toast, onClose }) {
           </Pressable>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+// ---------- swipe actions ----------
+// Swipe toward the reading direction's start = done, toward the end = delete (mirrored in Hebrew).
+const SWIPE_AT = 88;
+export function SwipeRow({ children, onDone, onDelete, doneIcon = 'checkmark' }) {
+  const { dir } = useI18n();
+  const x = useRef(new Animated.Value(0)).current;
+  const lead = dir.rtl ? -1 : 1;
+  const cb = useRef({});
+  cb.current = { onDone, onDelete, lead };
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+    onPanResponderMove: (_, g) => {
+      const { onDone: d, onDelete: del, lead: l } = cb.current;
+      const toDone = g.dx * l > 0;
+      if ((toDone && !d) || (!toDone && !del)) return;
+      x.setValue(g.dx);
+    },
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderRelease: (_, g) => {
+      const { onDone: d, onDelete: del, lead: l } = cb.current;
+      const dist = g.dx * l;
+      if (dist > SWIPE_AT && d) {
+        haptic('success');
+        Animated.timing(x, { toValue: 0, duration: 180, useNativeDriver: false }).start();
+        d();
+      } else if (dist < -SWIPE_AT && del) {
+        haptic('light');
+        Animated.timing(x, { toValue: g.dx > 0 ? 600 : -600, duration: 180, useNativeDriver: false }).start(() => { del(); x.setValue(0); });
+      } else {
+        Animated.spring(x, { toValue: 0, friction: 7, useNativeDriver: false }).start();
+      }
+    },
+    onPanResponderTerminate: () => Animated.spring(x, { toValue: 0, useNativeDriver: false }).start(),
+  }), []);
+  const pos = lead > 0;
+  const doneW = x.interpolate({ inputRange: pos ? [0, 600] : [-600, 0], outputRange: pos ? [0, 600] : [600, 0], extrapolate: 'clamp' });
+  const delW = x.interpolate({ inputRange: pos ? [-600, 0] : [0, 600], outputRange: pos ? [600, 0] : [0, 600], extrapolate: 'clamp' });
+  // No padding on the layers: at rest their width is 0, so nothing shows until you swipe.
+  const layer = { position: 'absolute', top: 2, bottom: 2, borderRadius: R.sm, justifyContent: 'center', overflow: 'hidden' };
+  const showDone = x.interpolate({ inputRange: pos ? [0, 12] : [-12, 0], outputRange: pos ? [0, 1] : [1, 0], extrapolate: 'clamp' });
+  const showDel = x.interpolate({ inputRange: pos ? [-12, 0] : [0, 12], outputRange: pos ? [1, 0] : [0, 1], extrapolate: 'clamp' });
+  return (
+    <View>
+      {onDone ? (
+        <Animated.View style={[layer, { [pos ? 'left' : 'right']: 0, width: doneW, opacity: showDone, backgroundColor: C.primary, alignItems: pos ? 'flex-start' : 'flex-end' }]}>
+          <View style={{ width: 60, alignItems: 'center' }}><Icon name={doneIcon} size={22} color={C.onPrimary} /></View>
+        </Animated.View>
+      ) : null}
+      {onDelete ? (
+        <Animated.View style={[layer, { [pos ? 'right' : 'left']: 0, width: delW, opacity: showDel, backgroundColor: C.danger, alignItems: pos ? 'flex-end' : 'flex-start' }]}>
+          <View style={{ width: 60, alignItems: 'center' }}><Icon name="trash" size={21} color="#FFFFFF" /></View>
+        </Animated.View>
+      ) : null}
+      <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: x }] }}>{children}</Animated.View>
     </View>
   );
 }

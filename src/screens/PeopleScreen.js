@@ -55,7 +55,7 @@ export function PersonEditor({ nav, params }) {
   const toast = useToast();
   const existing = params.id ? data.people.find((x) => x.id === params.id) : null;
   const [p, setP] = useState(() => existing || {
-    name: '', day: null, month: null, year: null, phone: '', notes: '',
+    name: '', day: params.day || null, month: params.month || null, year: null, phone: '', notes: '',
     remindOnDay: true, remindDayBefore: false, time: data.settings.defaultTime || '09:00', feb29: 'feb28',
   });
   const [err, setErr] = useState(null);

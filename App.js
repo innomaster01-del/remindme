@@ -19,11 +19,13 @@ import PeopleScreen, { PersonEditor } from './src/screens/PeopleScreen';
 import ShoppingScreen, { ListEditor, ListDetail } from './src/screens/ShoppingScreen';
 import SettingsScreen, { Onboarding } from './src/screens/SettingsScreen';
 import { updateWidget } from './src/widget';
+import DaySheet from './src/DaySheet';
+import NotesScreen, { NoteEditor } from './src/screens/NotesScreen';
 
 // The app handles right-to-left itself, so keep the native layout left-to-right.
 try { I18nManager.allowRTL(false); I18nManager.forceRTL(false); } catch (e) { /* noop */ }
 
-const STACK_SCREENS = { task: TaskEditor, person: PersonEditor, listEdit: ListEditor, list: ListDetail, people: PeopleScreen };
+const STACK_SCREENS = { task: TaskEditor, person: PersonEditor, listEdit: ListEditor, list: ListDetail, people: PeopleScreen, note: NoteEditor };
 
 function guessLang() {
   try {
@@ -97,7 +99,14 @@ function Main() {
     toastTimer.current = setTimeout(() => setToast(null), tst.action ? 5000 : 2600);
   }, []);
 
+  const [daySheet, setDaySheet] = useState(null);
+  const newListRef = useRef(null);
+  newListRef.current = (forDate = null) => {
+    const id = actions.saveList({ title: t('list.defaultTitle'), date: forDate, time: null, note: '', remind: false });
+    setStack((s) => [...s, { name: 'list', params: { id, write: true }, key: Date.now() + Math.random() }]);
+  };
   const nav = useMemo(() => ({
+    newList: (forDate) => newListRef.current(forDate),
     push: (name, params = {}) => setStack((s) => [...s, { name, params, key: Date.now() + Math.random() }]),
     pop: () => setStack((s) => s.slice(0, -1)),
     replace: (name, params = {}) => setStack((s) => [...s.slice(0, -1), { name, params, key: Date.now() + Math.random() }]),
@@ -120,7 +129,8 @@ function Main() {
     return () => { sub.remove(); clearInterval(iv); };
   }, []);
 
-  useEffect(() => { N.configure(t); }, [t]);
+  const sound = data.settings.sound || 'default';
+  useEffect(() => { N.configure(t, sound); }, [t, sound]);
   useEffect(() => { N.getPermission().then(setPerm).catch(() => {}); }, []);
 
   const requestPermission = useCallback(async () => {
@@ -136,7 +146,7 @@ function Main() {
     const timer = setTimeout(async () => {
       const plan = buildPlan(data, new Date(), t);
       setHorizon(plan.truncated && plan.horizon && plan.horizon.getTime() - Date.now() < 7 * 86400000);
-      try { setScheduled(await N.sync(plan)); } catch (e) { /* noop */ }
+      try { setScheduled(await N.sync(plan, sound)); } catch (e) { /* noop */ }
     }, 600);
     return () => clearTimeout(timer);
   }, [data.tasks, data.people, data.lists, data.settings, perm, t, dayKey]);
@@ -192,12 +202,13 @@ function Main() {
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (addOpen) { setAddOpen(null); return true; }
+      if (daySheet) { setDaySheet(null); return true; }
       if (stack.length) { nav.pop(); return true; }
       if (tab !== 'today') { setTab('today'); return true; }
       return false;
     });
     return () => sub.remove();
-  }, [stack.length, tab, nav, addOpen]);
+  }, [stack.length, tab, nav, addOpen, daySheet]);
 
   const mods = data.settings.modules;
   const tabs = [
@@ -205,16 +216,18 @@ function Main() {
     { key: 'calendar', icon: 'calendar' },
     mods.tasks && { key: 'tasks', icon: 'checkmark-circle' },
     mods.shopping && { key: 'shopping', icon: 'basket' },
+    mods.notes !== false && { key: 'notes', icon: 'document-text' },
   ].filter(Boolean);
-  useEffect(() => { if (!tabs.find((x) => x.key === tab)) setTab('today'); }, [mods.tasks, mods.shopping]);
+  useEffect(() => { if (!tabs.find((x) => x.key === tab)) setTab('today'); }, [mods.tasks, mods.shopping, mods.notes]);
 
   const notifState = perm === 'denied' ? 'denied' : horizon ? 'horizon' : 'ok';
 
   const openAdd = (forDate) => {
-    const enabled = [mods.tasks, mods.shopping, mods.birthdays].filter(Boolean).length;
+    const enabled = [mods.tasks, mods.shopping, mods.birthdays, mods.notes !== false].filter(Boolean).length;
     if (enabled === 1) {
       if (mods.tasks) return nav.push('task', { date: forDate });
-      if (mods.shopping) return nav.push('listEdit', { date: forDate });
+      if (mods.shopping) return nav.newList(forDate);
+      if (mods.notes !== false) return nav.push('note', {});
       return nav.push('person', {});
     }
     setAddOpen(forDate);
@@ -222,7 +235,8 @@ function Main() {
   openAddRef.current = openAdd;
   const onFab = () => {
     if (tab === 'tasks') return nav.push('task', { date: todayStr() });
-    if (tab === 'shopping') return nav.push('listEdit', { date: null });
+    if (tab === 'shopping') return nav.newList(null);
+    if (tab === 'notes') return nav.push('note', {});
     if (tab === 'calendar') return openAdd(calDate);
     return openAdd(date);
   };
@@ -248,8 +262,9 @@ function Main() {
       <View key={scheme} style={{ flex: 1, backgroundColor: C.bg }}>
         <Backdrop />
         <View style={{ flex: 1 }}>
-          {tab === 'today' ? <TodayScreen {...screenProps} date={date} setDate={setDate} notifState={notifState} /> : null}
-          {tab === 'calendar' ? <CalendarScreen {...screenProps} selected={calDate} setSelected={setCalDate} onAdd={openAdd} /> : null}
+          {tab === 'today' ? <TodayScreen {...screenProps} date={date} setDate={setDate} notifState={notifState} openDay={setDaySheet} /> : null}
+          {tab === 'calendar' ? <CalendarScreen {...screenProps} selected={calDate} setSelected={setCalDate} onAdd={openAdd} openDay={setDaySheet} /> : null}
+          {tab === 'notes' ? <NotesScreen {...screenProps} /> : null}
           {tab === 'tasks' ? <TasksScreen {...screenProps} /> : null}
           {tab === 'shopping' ? <ShoppingScreen {...screenProps} /> : null}
         </View>
@@ -266,10 +281,12 @@ function Main() {
             const d = addOpen;
             setAddOpen(null);
             if (k === 'task') nav.push('task', { date: d });
-            if (k === 'list') nav.push('listEdit', { date: d });
+            if (k === 'list') nav.newList(d || null);
+            if (k === 'note') nav.push('note', {});
             if (k === 'person') nav.push('person', {});
           }} />
         </Sheet>
+        <DaySheet date={daySheet} onClose={() => setDaySheet(null)} nav={nav} />
         <ToastHost toast={toast} onClose={() => setToast(null)} />
       </View>
      </ToastCtx.Provider>

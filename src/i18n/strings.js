@@ -390,6 +390,66 @@ const EXTRA3 = {
 };
 merge(he, EXTRA3.he); merge(en, EXTRA3.en); merge(ru, EXTRA3.ru);
 
+// ---------- v1.5 additions ----------
+const EXTRA4 = {
+  he: {
+    tabs: { notes: 'פתקים' },
+    add: { note: 'פתק' },
+    notes: {
+      ph: 'כתבו כאן…\nהשורה הראשונה היא הכותרת', untitled: 'פתק ללא כותרת', search: 'חיפוש בפתקים', pinned: 'מוצמדים', others: 'כל השאר',
+      emptyTitle: 'אין פתקים עדיין', empty: 'מקום לכתוב חופשי — רעיונות, מספרים, מתכונים. לחצו + כדי להתחיל.', noResults: 'לא נמצא', pin: 'הצמדה',
+    },
+    task: { padPh: 'מה צריך לעשות?\nאפשר לכתוב כמה שורות…', padHint: 'השורה הראשונה היא שם המשימה, ומה שמתחת נשמר כטקסט חופשי' },
+    list: {
+      modeWrite: '✎ כתיבה', modeCheck: '✓ רשימה', writePh: 'כתבו פריט בכל שורה…\nחלב\nלחם\nביצים', noReminder: 'בלי תזכורת',
+      remindMe: 'להזכיר לי', justList: 'רשימה סתם — בלי התראה', boughtHidden: { one: 'פריט אחד שנקנה מוסתר בכתיבה', other: '{n} פריטים שנקנו מוסתרים בכתיבה' },
+    },
+    dept: { sortBtn: 'סדר לפי סוג' },
+    sound: {
+      title: 'צליל התראה', default: 'צליל הטלפון', chime: 'צלצול', bell: 'פעמון', soft: 'עדין', digital: 'דיגיטלי', silent: 'שקט (רטט בלבד)',
+      preview: 'ככה זה נשמע — התראה לדוגמה תגיע עוד רגע', hint: 'בחירת צליל משמיעה התראה לדוגמה',
+    },
+  },
+  en: {
+    tabs: { notes: 'Notes' },
+    add: { note: 'Note' },
+    notes: {
+      ph: 'Write here…\nThe first line is the title', untitled: 'Untitled note', search: 'Search notes', pinned: 'Pinned', others: 'Others',
+      emptyTitle: 'No notes yet', empty: 'A place to write freely — ideas, numbers, recipes. Tap + to start.', noResults: 'Nothing found', pin: 'Pin',
+    },
+    task: { padPh: 'What needs doing?\nYou can write several lines…', padHint: 'The first line is the task name; anything below is kept as free text' },
+    list: {
+      modeWrite: '✎ Write', modeCheck: '✓ List', writePh: 'One item per line…\nMilk\nBread\nEggs', noReminder: 'No reminder',
+      remindMe: 'Remind me', justList: 'Just a list — no notification', boughtHidden: { one: '1 bought item hidden while writing', other: '{n} bought items hidden while writing' },
+    },
+    dept: { sortBtn: 'Sort by type' },
+    sound: {
+      title: 'Notification sound', default: 'Phone default', chime: 'Chime', bell: 'Bell', soft: 'Soft', digital: 'Digital', silent: 'Silent (vibrate only)',
+      preview: 'This is how it sounds — a sample notification is on its way', hint: 'Choosing a sound plays a sample notification',
+    },
+  },
+  ru: {
+    tabs: { notes: 'Заметки' },
+    add: { note: 'Заметка' },
+    notes: {
+      ph: 'Пишите здесь…\nПервая строка — заголовок', untitled: 'Без названия', search: 'Поиск в заметках', pinned: 'Закреплённые', others: 'Остальные',
+      emptyTitle: 'Заметок пока нет', empty: 'Место для свободных записей — идеи, номера, рецепты. Нажмите +, чтобы начать.', noResults: 'Ничего не найдено', pin: 'Закрепить',
+    },
+    task: { padPh: 'Что нужно сделать?\nМожно написать несколько строк…', padHint: 'Первая строка — название задачи, остальное сохраняется как текст' },
+    list: {
+      modeWrite: '✎ Писать', modeCheck: '✓ Список', writePh: 'Каждый товар с новой строки…\nМолоко\nХлеб\nЯйца', noReminder: 'Без напоминания',
+      remindMe: 'Напомнить мне', justList: 'Просто список — без уведомления',
+      boughtHidden: { one: '{n} купленный товар скрыт', few: '{n} купленных товара скрыто', many: '{n} купленных товаров скрыто', other: '{n} купленных товара скрыто' },
+    },
+    dept: { sortBtn: 'По типу' },
+    sound: {
+      title: 'Звук уведомления', default: 'Как в телефоне', chime: 'Перезвон', bell: 'Колокольчик', soft: 'Мягкий', digital: 'Цифровой', silent: 'Без звука (вибрация)',
+      preview: 'Так это звучит — сейчас придёт пример', hint: 'При выборе звука приходит пример уведомления',
+    },
+  },
+};
+merge(he, EXTRA4.he); merge(en, EXTRA4.en); merge(ru, EXTRA4.ru);
+
 export const STRINGS = { he, en, ru };
 export const LANGS = [
   { code: 'he', label: 'עברית', rtl: true },

@@ -70,7 +70,7 @@ export function buildPlan(data, now, t) {
 
   if (modules.shopping !== false) {
     for (const l of lists) {
-      if (!l.date || l.status === 'done') continue;
+      if (!l.date || l.status === 'done' || l.remind === false) continue;
       const left = (l.items || []).filter((i) => !i.checked).length;
       add(`list:${l.id}:${l.date}`, combine(l.date, l.time || defTime), t('notif.listTitle', { title: l.title }),
         t('notif.listBody', { n: left }), { kind: 'list', id: l.id, date: l.date });

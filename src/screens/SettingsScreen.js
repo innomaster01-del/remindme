@@ -5,8 +5,8 @@ import { useStore, exportBackup, validateBackup } from '../store';
 import { useI18n, Row, Txt, Section, Card, Toggle, Button, Input, Sheet, Icon, Page, Segmented, useToast } from '../ui';
 import { TimeField } from '../pickers';
 import { LANGS } from '../i18n';
-import { C, R } from '../theme';
-import { supported, sendTest } from '../notifications';
+import { C, R, ff } from '../theme';
+import { supported, sendTest, SOUNDS } from '../notifications';
 
 export function LanguagePicker({ value, onPick }) {
   return (
@@ -101,7 +101,7 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
           <Card style={{ gap: 12 }}>
             <Button variant="soft" icon="notifications" title={t('reliable.test')} onPress={async () => {
               if (notif !== 'granted') { const r = await onRequestPermission(); if (r !== 'granted') return; }
-              await sendTest(t);
+              await sendTest(t, s.sound || 'default');
               toast({ text: t('reliable.testSent'), icon: 'time' });
             }} />
             {Platform.OS === 'android' ? (
@@ -115,11 +115,35 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
       ) : null}
 
 
+      <Section title={t('sound.title')} icon="musical-notes">
+        <Card style={{ paddingVertical: 4 }}>
+          {SOUNDS.map((snd, i) => {
+            const sel = (s.sound || 'default') === snd;
+            return (
+              <Pressable key={snd} onPress={async () => {
+                actions.setSettings({ sound: snd });
+                if (supported && notif === 'granted' && snd !== 'silent') {
+                  try { await sendTest(t, snd, 2); toast({ text: t('sound.preview'), icon: 'musical-note' }); } catch (e) { /* noop */ }
+                }
+              }} style={{ paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <Row gap={12}>
+                  <Icon name={snd === 'silent' ? 'notifications-off-outline' : snd === 'default' ? 'phone-portrait-outline' : 'musical-note-outline'} size={19} color={sel ? C.primary : C.muted} />
+                  <Txt style={[{ flex: 1 }, sel ? { color: C.primary, ...ff(600) } : null]}>{t('sound.' + snd)}</Txt>
+                  {sel ? <Icon name="checkmark" size={20} color={C.primary} /> : null}
+                </Row>
+              </Pressable>
+            );
+          })}
+        </Card>
+        <Txt v="tiny" style={{ marginTop: 8, ...ff(400) }}>{t('sound.hint')}</Txt>
+      </Section>
+
       <Section title={t('settings.modules')} icon="apps" color={C.shop}>
         <Card style={{ paddingVertical: 4 }}>
           <Toggle icon="checkmark-circle" color={C.primary} label={t('tabs.tasks')} value={s.modules.tasks} onChange={(v) => setModule('tasks', v)} />
           <Toggle icon="gift" color={C.bday} label={t('tabs.people')} value={s.modules.birthdays} onChange={(v) => setModule('birthdays', v)} />
           <Toggle icon="basket" color={C.shop} label={t('tabs.shopping')} value={s.modules.shopping} onChange={(v) => setModule('shopping', v)} />
+          <Toggle icon="document-text" color={C.primary} label={t('tabs.notes')} value={s.modules.notes !== false} onChange={(v) => setModule('notes', v)} />
         </Card>
       </Section>
 
@@ -138,7 +162,7 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         ])} />
       </Section>
 
-      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.4.0</Txt>
+      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.5.0</Txt>
 
       <Sheet visible={importOpen} onClose={() => setImportOpen(false)} title={t('settings.import')}>
         <Input value={importText} onChangeText={setImportText} placeholder={t('settings.importPh')} multiline style={{ minHeight: 140, textAlign: 'left', writingDirection: 'ltr' }} />

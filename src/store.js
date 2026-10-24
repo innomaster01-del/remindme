@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { todayStr, addDays } from './logic/dates';
 import { normName, classify, deptOrder } from './logic/departments';
+import { syncItemsFromText } from './logic/listtext';
 
 const KEY = 'remindme:data:v1';
 export const STORAGE_KEY = KEY;
@@ -22,7 +23,7 @@ export const DEFAULT_DATA = {
   settings: {
     lang: null,
     defaultTime: '09:00',
-    modules: { tasks: true, birthdays: true, shopping: true },
+    modules: { tasks: true, birthdays: true, shopping: true, notes: true },
     hideContent: false,
     onboarded: false,
   },
@@ -31,6 +32,7 @@ export const DEFAULT_DATA = {
   lists: [],
   itemHistory: {},
   deptLearned: {},
+  notes: [],
 };
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -47,6 +49,7 @@ export function migrate(raw) {
   delete d.places;
   d.lists = d.lists.map(({ placeId, ...l }) => l);
   d.deptLearned = raw.deptLearned && typeof raw.deptLearned === 'object' ? raw.deptLearned : {};
+  d.notes = Array.isArray(raw.notes) ? raw.notes : [];
   d.version = SCHEMA_VERSION;
   return d;
 }
@@ -242,6 +245,32 @@ export function StoreProvider({ children }) {
         }),
       })),
       setItemsOrder: (listId, items) => upList(listId, (l) => ({ ...l, items })),
+
+      // ----- pinning -----
+      togglePinTask: (id) => upTask(id, (x) => ({ ...x, pinned: !x.pinned })),
+
+      // ----- shopping list as text -----
+      setListText: (listId, text) => up((d) => {
+        const list = d.lists.find((l) => l.id === listId);
+        if (!list) return d;
+        const { items, added } = syncItemsFromText(list.items, text, uid);
+        const hist = { ...d.itemHistory };
+        for (const name of added) {
+          const key = norm(name);
+          hist[key] = { name, count: (hist[key]?.count || 0) + 1, last: Date.now() };
+        }
+        return { ...d, itemHistory: hist, lists: d.lists.map((l) => (l.id === listId ? { ...l, items, status: items.some((i) => !i.checked) ? 'open' : l.status } : l)) };
+      }),
+
+      // ----- notes -----
+      saveNote: (note) => {
+        const id = note.id || uid();
+        up((d) => ({ ...d, notes: replaceIn(d.notes, { createdAt: Date.now(), ...note, id, updatedAt: Date.now() }) }));
+        return id;
+      },
+      deleteNote: (id) => up((d) => ({ ...d, notes: d.notes.filter((x) => x.id !== id) })),
+      restoreNote: (n) => up((d) => ({ ...d, notes: replaceIn(d.notes, n) })),
+      togglePinNote: (id) => up((d) => ({ ...d, notes: d.notes.map((x) => (x.id === id ? { ...x, pinned: !x.pinned } : x)) })),
 
       // ----- undo -----
       restoreTask: (task) => up((d) => ({ ...d, tasks: replaceIn(d.tasks, task) })),

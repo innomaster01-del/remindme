@@ -194,3 +194,31 @@ import { classify } from '../src/logic/departments';
 }
 console.log(`department checks: ${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;
+
+// --- notepad helpers ---
+import { syncItemsFromText, itemsToText, splitTitle } from '../src/logic/listtext';
+{
+  let n = 0; const nid = () => 'n' + (++n);
+  const items = [
+    { id: 'a', name: 'חלב', qty: '2', checked: false, cat: 'dairy' },
+    { id: 'b', name: 'לחם', qty: '', checked: true },
+    { id: 'c', name: 'ביצים', qty: '12', checked: false },
+  ];
+  eq('items to text', itemsToText(items), 'חלב\nביצים');
+  const r = syncItemsFromText(items, '• חלב\n\nעגבניות\n  ביצים  \n', nid);
+  eq('sync keeps ids + qty', r.items.map((i) => [i.id, i.name, i.qty, i.checked]), [['a', 'חלב', '2', false], ['n1', 'עגבניות', '', false], ['c', 'ביצים', '12', false], ['b', 'לחם', '', true]]);
+  eq('sync reports added', r.added, ['עגבניות']);
+  eq('sync removes deleted lines', syncItemsFromText(items, 'ביצים', nid).items.map((i) => i.id), ['c', 'b']);
+  eq('title split', splitTitle('\n  להכין מסיבה \nהזמנות\nעוגה'), { title: 'להכין מסיבה', body: 'הזמנות\nעוגה' });
+  eq('title split empty', splitTitle('   \n '), { title: '', body: '' });
+}
+// lists without reminder are not scheduled
+{
+  const pl = buildPlan({ settings: { defaultTime: '09:00' }, tasks: [], people: [], lists: [
+    { id: 'r1', title: 'A', date: '2026-10-25', time: '10:00', status: 'open', items: [], remind: false },
+    { id: 'r2', title: 'B', date: '2026-10-25', time: '10:00', status: 'open', items: [] },
+  ] }, new Date(2026, 9, 24, 10), t);
+  eq('remind:false skipped', pl.items.map((i) => i.id), ['list:r2:2026-10-25']);
+}
+console.log(`notepad checks: ${passed} passed, ${failed} failed`);
+if (failed) process.exitCode = 1;

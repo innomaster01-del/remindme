@@ -2,7 +2,7 @@
   "expo": {
     "name": "Remind Me",
     "slug": "remindme",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -39,7 +39,13 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#5856D6"
+          "color": "#5856D6",
+          "sounds": [
+            "./assets/sounds/chime.wav",
+            "./assets/sounds/bell.wav",
+            "./assets/sounds/soft.wav",
+            "./assets/sounds/digital.wav"
+          ]
         }
       ],
       [

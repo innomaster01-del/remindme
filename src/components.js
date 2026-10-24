@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Pressable, Linking, TextInput } from 'react-native';
-import { useI18n, Row, Txt, Check, Icon, Card, IconBtn, haptic, useToast } from './ui';
+import { useI18n, Row, Txt, Check, Icon, Card, IconBtn, haptic, useToast, SwipeRow } from './ui';
 import { useStore } from './store';
 import { parseQuick } from './logic/quickparse';
 import { todayStr, addDays as addD, diffDays } from './logic/dates';
@@ -19,9 +19,14 @@ function Meta({ icon, text, color }) {
 
 const openSubs = new Set(); // which tasks have their steps opened (kept while the app runs)
 
-export function TaskRow({ task, date, onToggle, onPress, right, showDate }) {
+export function TaskRow({ task, date, onToggle, onPress, right, showDate, noSwipe }) {
   const { t, f, dir } = useI18n();
   const { actions } = useStore();
+  const toast = useToast();
+  const remove = () => {
+    actions.deleteTask(task.id);
+    toast({ text: `${t('toast.deleted')}: ${task.title}`, icon: 'trash', action: t('toast.undo'), onAction: () => actions.restoreTask(task) });
+  };
   const done = date ? isDoneOn(task, date) : task.status === 'done';
   const high = task.priority === 'high' && !done;
   const subs = task.subtasks || [];
@@ -33,11 +38,12 @@ export function TaskRow({ task, date, onToggle, onPress, right, showDate }) {
     setOpen(!open);
   };
   const inset = dir.row === 'row-reverse' ? { marginRight: 40 } : { marginLeft: 40 };
-  return (
+  const row = (
     <View>
       <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
         <Row style={{ paddingVertical: 13, paddingHorizontal: 4 }} gap={14} align="center">
           <Check checked={done} onPress={onToggle} color={high ? C.high : C.primary} />
+          {task.pinned ? <Icon name="pin" size={14} color={C.primary} /> : null}
           <View style={{ flex: 1, gap: 4 }}>
             <Txt v="strong" style={done ? { color: C.faint, textDecorationLine: 'line-through' } : null} numberOfLines={2}>{task.title}</Txt>
             {(showDate && task.date) || task.time || isRecurring(task) || high ? (
@@ -75,6 +81,8 @@ export function TaskRow({ task, date, onToggle, onPress, right, showDate }) {
       ) : null}
     </View>
   );
+  if (noSwipe) return row;
+  return <SwipeRow onDone={onToggle} onDelete={remove}>{row}</SwipeRow>;
 }
 
 export function Group({ children, style }) {
