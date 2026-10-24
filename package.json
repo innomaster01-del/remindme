@@ -11,6 +11,6 @@
     "ios:testflight": "eas build -p ios --profile production --auto-submit"
   },
   "dependencies": {
-    "expo": "~57.0.0"
+    "expo": "~58.0.0"
   }
 }

