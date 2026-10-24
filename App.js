@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { View, Pressable, Text, BackHandler, AppState, StatusBar, I18nManager, useColorScheme, Linking } from 'react-native';
+import { View, Pressable, Text, BackHandler, AppState, StatusBar, I18nManager, useColorScheme, Linking, Platform } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useFonts, Rubik_400Regular, Rubik_500Medium, Rubik_600SemiBold, Rubik_700Bold, Rubik_800ExtraBold,
 } from '@expo-google-fonts/rubik';
 import { StoreProvider, useStore } from './src/store';
-import { I18nCtx, makeDir, Icon, Sheet, useI18n, haptic, ToastCtx, ToastHost } from './src/ui';
+import { I18nCtx, makeDir, Icon, Sheet, useI18n, haptic, ToastCtx, ToastHost, Backdrop, Glass } from './src/ui';
 import { makeT, makeFormat } from './src/i18n';
 import { C, applyTheme, fontState, ff, shadow } from './src/theme';
 import { todayStr, addDays, combine } from './src/logic/dates';
@@ -18,15 +18,12 @@ import TasksScreen, { TaskEditor } from './src/screens/TasksScreen';
 import PeopleScreen, { PersonEditor } from './src/screens/PeopleScreen';
 import ShoppingScreen, { ListEditor, ListDetail } from './src/screens/ShoppingScreen';
 import SettingsScreen, { Onboarding } from './src/screens/SettingsScreen';
-import ContactsImport from './src/screens/ContactsImport';
-import PlaceEditor from './src/screens/PlaceEditor';
-import { syncGeofences } from './src/geo';
 import { updateWidget } from './src/widget';
 
 // The app handles right-to-left itself, so keep the native layout left-to-right.
 try { I18nManager.allowRTL(false); I18nManager.forceRTL(false); } catch (e) { /* noop */ }
 
-const STACK_SCREENS = { task: TaskEditor, person: PersonEditor, listEdit: ListEditor, list: ListDetail, people: PeopleScreen, contacts: ContactsImport, place: PlaceEditor };
+const STACK_SCREENS = { task: TaskEditor, person: PersonEditor, listEdit: ListEditor, list: ListDetail, people: PeopleScreen };
 
 function guessLang() {
   try {
@@ -47,29 +44,26 @@ function TabBar({ tab, setTab, tabs, onAdd }) {
     return (
       <Pressable key={k.key} onPress={() => { haptic(); setTab(k.key); }} style={{ flex: 1, alignItems: 'center', paddingVertical: 8, gap: 3 }}
         accessibilityRole="tab" accessibilityState={{ selected: sel }}>
-        <View style={{ paddingHorizontal: 14, paddingVertical: 4, borderRadius: 999, backgroundColor: sel ? C.primarySoft : 'transparent' }}>
-          <Icon name={sel ? k.icon : `${k.icon}-outline`} size={22} color={sel ? C.primary : C.faint} />
-        </View>
-        <Text numberOfLines={1} style={{ fontSize: 11, color: sel ? C.primary : C.muted, ...ff(sel ? 600 : 500) }}>{t(`tabs.${k.key}`)}</Text>
+        <Icon name={sel ? k.icon : `${k.icon}-outline`} size={23} color={sel ? C.primary : C.muted} />
+        <Text numberOfLines={1} style={{ fontSize: 10.5, color: sel ? C.primary : C.muted, ...ff(sel ? 600 : 500) }}>{t(`tabs.${k.key}`)}</Text>
       </Pressable>
     );
   };
   return (
-    <View style={[{
-      flexDirection: dir.row, alignItems: 'center', backgroundColor: C.tabBar,
-      paddingBottom: Math.max(insets.bottom, 8), paddingTop: 4, paddingHorizontal: 6,
-      borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    }, shadow(2)]}>
-      {tabs.slice(0, half).map(renderTab)}
-      <View style={{ width: 72, alignItems: 'center' }}>
-        <Pressable onPress={() => { haptic('light'); onAdd(); }} accessibilityLabel="+" style={({ pressed }) => [{
-          width: 58, height: 58, borderRadius: 20, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
-          marginTop: -30, transform: [{ scale: pressed ? 0.93 : 1 }, { rotate: '0deg' }],
-        }, shadow(2)]}>
-          <Icon name="add" size={32} color={C.onPrimary} />
-        </Pressable>
-      </View>
-      {tabs.slice(half).map(renderTab)}
+    // Floating glass capsule, like the iOS tab bar.
+    <View pointerEvents="box-none" style={{ position: 'absolute', left: 14, right: 14, bottom: Math.max(insets.bottom, 10) }}>
+      <Glass intensity={70} style={[{ borderRadius: 30, flexDirection: dir.row, alignItems: 'center', paddingVertical: 4, paddingHorizontal: 6, backgroundColor: Platform.OS === 'ios' ? undefined : C.tabBar }, shadow(2)]}>
+        {tabs.slice(0, half).map(renderTab)}
+        <View style={{ width: 66, alignItems: 'center' }}>
+          <Pressable onPress={() => { haptic('light'); onAdd(); }} accessibilityLabel="+" style={({ pressed }) => ({
+            width: 50, height: 50, borderRadius: 25, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center',
+            transform: [{ scale: pressed ? 0.92 : 1 }],
+          })}>
+            <Icon name="add" size={28} color={C.onPrimary} />
+          </Pressable>
+        </View>
+        {tabs.slice(half).map(renderTab)}
+      </Glass>
     </View>
   );
 }
@@ -150,11 +144,11 @@ function Main() {
   const dataRef = useRef(data);
   dataRef.current = data;
 
-  // Keep the home-screen widget and the location alerts in step with the data.
+  // Keep the home-screen widget in step with the data.
   useEffect(() => {
-    const timer = setTimeout(() => { updateWidget(data); syncGeofences(data); }, 900);
+    const timer = setTimeout(() => { updateWidget(data); }, 900);
     return () => clearTimeout(timer);
-  }, [data.tasks, data.people, data.lists, data.places, data.settings, dayKey]);
+  }, [data.tasks, data.people, data.lists, data.settings, dayKey]);
 
   // Deep links from the widget: remindme://add, remindme://list/<id>
   const openAddRef = useRef(null);
@@ -252,6 +246,7 @@ function Main() {
      <ToastCtx.Provider value={showToast}>
       <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={C.bg} />
       <View key={scheme} style={{ flex: 1, backgroundColor: C.bg }}>
+        <Backdrop />
         <View style={{ flex: 1 }}>
           {tab === 'today' ? <TodayScreen {...screenProps} date={date} setDate={setDate} notifState={notifState} /> : null}
           {tab === 'calendar' ? <CalendarScreen {...screenProps} selected={calDate} setSelected={setCalDate} onAdd={openAdd} /> : null}

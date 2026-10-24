@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Check, IconBtn, Icon, Banner, Sheet, useToast, haptic, Segmented } from '../ui';
 import { DEPARTMENTS, classify, deptName } from '../logic/departments';
-import { geoSupported, locationPermission, requestBackground } from '../geo';
 import { ListCard, Group } from '../components';
 import { DateField, TimeField, DatePickerSheet } from '../pickers';
 import { C, R, ff, shadow } from '../theme';
@@ -56,15 +55,9 @@ export function ListEditor({ nav, params }) {
 
   const save = async () => {
     const title = l.title.trim() || t('list.defaultTitle');
-    const id = actions.saveList({ ...l, title });
+    const { placeId, ...rest } = l;
+    const id = actions.saveList({ ...rest, title });
     if (existing) nav.pop(); else nav.replace('list', { id });
-    // Arrival alerts need "Allow all the time" location access — ask with an explanation first.
-    if (l.placeId && geoSupported && (await locationPermission()) !== 'always') {
-      Alert.alert(t('geo.permTitle'), t('geo.permWhy'), [
-        { text: t('onboarding.later'), style: 'cancel' },
-        { text: t('common.ok'), onPress: () => { requestBackground().catch(() => {}); } },
-      ]);
-    }
   };
 
   return (
@@ -82,15 +75,6 @@ export function ListEditor({ nav, params }) {
           <TimeField value={l.time} onChange={(v) => set({ time: v })} />
         </Field>
       ) : null}
-      <Field label={t('geo.remindAt')} hint={t('geo.remindHint')}>
-        <Row gap={8} style={{ flexWrap: 'wrap' }}>
-          <Chip label={t('common.none')} selected={!l.placeId} color={C.shop} onPress={() => set({ placeId: null })} />
-          {data.places.map((p) => (
-            <Chip key={p.id} icon="location" label={p.name} color={C.shop} selected={l.placeId === p.id} onPress={() => set({ placeId: p.id })} />
-          ))}
-          <Chip icon="add" label={t('geo.newPlace')} color={C.shop} onPress={() => nav.push('place', {})} />
-        </Row>
-      </Field>
       <Field label={t('common.notes')}>
         <Input value={l.note} onChangeText={(v) => set({ note: v })} multiline />
       </Field>
@@ -113,16 +97,6 @@ export function ListDetail({ nav, params }) {
   if (!list) return null;
 
   const unchecked = list.items.filter((i) => !i.checked);
-  const byDept = data.settings.groupByDept !== false;
-  const deptGroups = [];
-  if (byDept) {
-    const map = {};
-    for (const it of unchecked) {
-      const k = it.cat || classify(it.name, data.deptLearned);
-      (map[k] = map[k] || []).push(it);
-    }
-    for (const d of DEPARTMENTS) if (map[d.key]) deptGroups.push({ key: d.key, icon: d.icon, items: map[d.key] });
-  }
   const checked = list.items.filter((i) => i.checked);
   const allBought = list.items.length > 0 && unchecked.length === 0 && list.status !== 'done';
 
@@ -199,9 +173,6 @@ export function ListDetail({ nav, params }) {
       <Row gap={8} style={{ marginBottom: 12, flexWrap: 'wrap' }}>
         {list.date ? <Chip icon="calendar-outline" label={f.long(list.date)} color={C.shop} onPress={() => nav.push('listEdit', { id: list.id })} /> : null}
         {list.time ? <Chip icon="alarm-outline" label={list.time} color={C.shop} onPress={() => nav.push('listEdit', { id: list.id })} /> : null}
-        {list.placeId && data.places.find((p) => p.id === list.placeId) ? (
-          <Chip icon="location" label={data.places.find((p) => p.id === list.placeId).name} color={C.shop} onPress={() => nav.push('listEdit', { id: list.id })} />
-        ) : null}
         {list.items.length ? <Chip label={t('list.progress', { done: checked.length, total: list.items.length })} color={C.shop} /> : null}
       </Row>
       {list.note ? <Txt v="muted" style={{ marginBottom: 12 }}>{list.note}</Txt> : null}
@@ -246,33 +217,20 @@ export function ListDetail({ nav, params }) {
 
       {list.items.length === 0 ? <Empty icon="basket-outline" color={C.shop} body={`${t('list.emptyItems')}\n${t('list.pasteHint')}`} /> : null}
 
-      {unchecked.length ? (
-        <Row justify="space-between" style={{ marginTop: 16, paddingHorizontal: 2 }}>
-          <Txt v="label">{t('dept.sortLabel')}</Txt>
-          <View style={{ width: 210 }}>
-            <Segmented value={byDept ? 'dept' : 'added'} onChange={(v) => actions.setSettings({ groupByDept: v === 'dept' })}
-              options={[{ value: 'dept', label: t('dept.byDept') }, { value: 'added', label: t('dept.byAdded') }]} />
-          </View>
+      {unchecked.length > 1 ? (
+        <Row justify="flex-end" style={{ marginTop: 14 }}>
+          <Button small variant="soft" icon="swap-vertical" title={t('dept.sortBtn')} onPress={() => {
+            const before = list.items;
+            actions.sortListByDept(list.id);
+            toast({ text: t('dept.sorted'), icon: 'checkmark-circle', action: t('toast.undo'), onAction: () => actions.setItemsOrder(list.id, before) });
+          }} />
         </Row>
       ) : null}
-      {unchecked.length && byDept ? <Txt v="tiny" style={{ marginTop: 6, paddingHorizontal: 2, ...ff(400) }}>{t('dept.hint')}</Txt> : null}
-      {unchecked.length && !byDept ? (
-        <View style={{ marginTop: 12 }}>
+      {unchecked.length ? (
+        <View style={{ marginTop: 10 }}>
           <Group>{unchecked.map((i) => <ItemRow key={i.id} item={i} />)}</Group>
         </View>
       ) : null}
-      {unchecked.length && byDept ? deptGroups.map((g) => (
-        <View key={g.key} style={{ marginTop: 14 }}>
-          <Row gap={8} style={{ marginBottom: 8, paddingHorizontal: 4 }}>
-            <View style={{ width: 24, height: 24, borderRadius: 8, backgroundColor: C.shopSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name={g.icon} size={14} color={C.shop} />
-            </View>
-            <Txt v="label" style={{ color: C.ink }}>{deptName(lang, g.key)}</Txt>
-            <Txt v="tiny" style={{ color: C.faint }}>{String(g.items.length)}</Txt>
-          </Row>
-          <Group>{g.items.map((i) => <ItemRow key={i.id} item={i} />)}</Group>
-        </View>
-      )) : null}
       {checked.length ? (
         <Section title={t('list.bought')} count={String(checked.length)}>
           <Group>{checked.map((i) => <ItemRow key={i.id} item={i} />)}</Group>

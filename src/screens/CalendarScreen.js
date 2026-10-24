@@ -130,9 +130,8 @@ export default function CalendarScreen({ nav, now, onAdd, selected, setSelected 
                   </View>
                   <Row gap={3} justify="center" style={{ marginTop: 4, height: 6 }}>
                     {mk.task ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: mk.tasksOpen ? C.primary : C.faint }} /> : null}
-                    {mk.bday ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.bday }} /> : null}
-                    {mk.shop ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.shop }} /> : null}
-                    {mk.holiday && !mk.holiday.major ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.holiday }} /> : null}
+                    {mk.bday ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.ink }} /> : null}
+                    {mk.shop ? <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.faint }} /> : null}
                   </Row>
                 </Pressable>
               );
@@ -163,7 +162,7 @@ export default function CalendarScreen({ nav, now, onAdd, selected, setSelected 
         <Group style={{ paddingHorizontal: 14 }}>
           {items.people.map((p) => {
             const age = p.year ? Number(sel.slice(0, 4)) - p.year : null;
-            return <AgendaRow key={'p' + p.id} color={C.bday} icon="gift" title={t('hero.bday', { name: p.name })}
+            return <AgendaRow key={'p' + p.id} color={C.ink} icon="gift-outline" title={t('hero.bday', { name: p.name })}
               sub={age ? t('person.turns', { n: age }) : null} onPress={() => nav.push('person', { id: p.id })} />;
           })}
           {items.tasks.sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map((x) => {
@@ -174,7 +173,7 @@ export default function CalendarScreen({ nav, now, onAdd, selected, setSelected 
           })}
           {items.lists.map((l) => {
             const left = l.items.filter((i) => !i.checked).length;
-            return <AgendaRow key={'l' + l.id} color={C.shop} icon="basket" title={l.title} done={l.status === 'done'}
+            return <AgendaRow key={'l' + l.id} color={C.faint} icon="basket-outline" title={l.title} done={l.status === 'done'}
               sub={[l.time, l.items.length ? t('today.itemsLeft', { n: left }) : null].filter(Boolean).join('   ')}
               onPress={() => nav.push('list', { id: l.id })} />;
           })}

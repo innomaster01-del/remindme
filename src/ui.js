@@ -5,6 +5,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { C, R, shadow, ff } from './theme';
 
 // ---------- haptics ----------
@@ -15,6 +17,31 @@ export function haptic(kind = 'select') {
     else if (kind === 'light') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     else Haptics.selectionAsync();
   } catch (e) { /* noop */ }
+}
+
+// ---------- glass ----------
+// Soft neutral backdrop with two faint accent glows, so translucent surfaces read as glass.
+export function Backdrop() {
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+      <LinearGradient colors={[C.bgFrom, C.bgTo]} start={{ x: 0, y: 0 }} end={{ x: 0.4, y: 1 }} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+      <View style={{ position: 'absolute', width: 420, height: 420, borderRadius: 210, top: -160, right: -140, backgroundColor: C.orb, opacity: 0.9 }} />
+      <View style={{ position: 'absolute', width: 360, height: 360, borderRadius: 180, bottom: 60, left: -170, backgroundColor: C.orb, opacity: 0.55 }} />
+    </View>
+  );
+}
+
+// Frosted surface. Real blur on iOS; on Android a translucent fill (Android blur is unreliable).
+export function Glass({ style, children, intensity = 40, strong }) {
+  if (Platform.OS === 'ios') {
+    return (
+      <BlurView intensity={intensity} tint={C.scheme === 'dark' ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'}
+        style={[{ overflow: 'hidden' }, style]}>
+        {children}
+      </BlurView>
+    );
+  }
+  return <View style={[{ backgroundColor: strong ? C.glassStrong : C.glass, overflow: 'hidden' }, style]}>{children}</View>;
 }
 
 // ---------- i18n / direction context ----------
@@ -246,11 +273,7 @@ export function Section({ title, color, icon, right, children, style, count }) {
     <View style={[{ marginTop: 26 }, style]}>
       <Row justify="space-between" style={{ marginBottom: 10, paddingHorizontal: 2 }}>
         <Row gap={8}>
-          {icon ? (
-            <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: color || C.primary, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name={icon} size={15} color={C.onPrimary} />
-            </View>
-          ) : null}
+          {icon ? <Icon name={icon} size={17} color={C.muted} /> : null}
           <Txt v="h2">{title}</Txt>
           {count ? <Txt v="tiny" style={{ color: C.faint }}>{count}</Txt> : null}
         </Row>
@@ -265,7 +288,7 @@ export function Empty({ icon, title, body, action, color }) {
   const accent = color || C.primary;
   return (
     <View style={{ alignItems: 'center', paddingVertical: 44, paddingHorizontal: 30, gap: 10 }}>
-      <View style={{ width: 76, height: 76, borderRadius: 26, backgroundColor: C.sunken, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-6deg' }] }}>
+      <View style={[{ width: 76, height: 76, borderRadius: 26, backgroundColor: C.card, alignItems: 'center', justifyContent: 'center' }, shadow(1)]}>
         <Icon name={icon} size={34} color={accent} />
       </View>
       {title ? <Txt v="h2" center style={{ marginTop: 6 }}>{title}</Txt> : null}
@@ -299,6 +322,7 @@ export function Page({ title, onBack, right, children, scroll = true, footer, bi
   const Body = scroll ? ScrollView : View;
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+      <Backdrop />
       <Row style={{ paddingHorizontal: 8, paddingVertical: 6, minHeight: 54 }} gap={4}>
         {onBack ? <IconBtn name={dir.back} onPress={onBack} size={26} bg={C.card} /> : <View style={{ width: 8 }} />}
         {!big ? <Txt v="title" style={{ flex: 1, marginHorizontal: 6 }} numberOfLines={1}>{title}</Txt> : <View style={{ flex: 1 }} />}
@@ -314,7 +338,7 @@ export function Page({ title, onBack, right, children, scroll = true, footer, bi
           {children}
         </Body>
         {footer ? (
-          <View style={{ padding: 16, paddingBottom: 16 + insets.bottom, backgroundColor: C.bg }}>
+          <View style={{ padding: 16, paddingBottom: 16 + insets.bottom }}>
             {footer}
           </View>
         ) : null}
@@ -329,14 +353,14 @@ export function Sheet({ visible, onClose, title, children }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <Pressable style={{ flex: 1, backgroundColor: C.overlay }} onPress={onClose} />
-      <View style={{
-        backgroundColor: C.bg, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl,
+      <Glass strong intensity={80} style={{
+        borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, borderWidth: 1, borderColor: C.glassBorder,
         padding: 20, paddingTop: 10, paddingBottom: 20 + insets.bottom, maxHeight: '90%',
       }}>
         <View style={{ alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.line, marginBottom: 14 }} />
         {title ? <Txt v="title" style={{ marginBottom: 16 }}>{title}</Txt> : null}
         <ScrollView keyboardShouldPersistTaps="handled">{children}</ScrollView>
-      </View>
+      </Glass>
     </Modal>
   );
 }

@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, ScrollView, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Banner, Button, IconBtn, Icon, haptic } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Banner, Button, IconBtn, Icon, haptic, Glass } from '../ui';
 import { TaskRow, Group, BirthdayRow, ListCard, QuickAdd } from '../components';
-import { C, R, ff, skyFor, shadow } from '../theme';
+import { C, R, ff, shadow } from '../theme';
 import { todayStr, addDays, diffDays, parseDate } from '../logic/dates';
 import { isRecurring, nextBirthday, isDoneOn } from '../logic/recurrence';
 import { hebrewFromDateStr, formatHebrew, holidayOn, holidayName } from '../logic/hebrew';
@@ -25,47 +24,46 @@ function Hero({ date, isToday, hour, items, label }) {
   const showHeb = data.settings.hebrewDate !== false;
   const heb = showHeb ? hebrewFromDateStr(date) : null;
   const hol = showHeb ? holidayOn(date) : null;
-  const sky = skyFor(isToday ? hour : 13);
   const total = items.tasks.length;
   const done = items.tasks.filter((x) => isDoneOn(x, date)).length;
   const left = total - done;
-  const white = (o) => `rgba(255,255,255,${o})`;
   const pill = (icon, text, key) => (
-    <View key={key} style={{ flexDirection: dir.row, alignItems: 'center', gap: 6, backgroundColor: white(0.2), borderRadius: R.pill, paddingHorizontal: 11, paddingVertical: 6 }}>
-      <Icon name={icon} size={14} color="#fff" />
-      <Text numberOfLines={1} style={{ color: '#fff', fontSize: 13, writingDirection: dir.writing, ...ff(500) }}>{text}</Text>
+    <View key={key} style={{ flexDirection: dir.row, alignItems: 'center', gap: 6, backgroundColor: C.sunken, borderRadius: R.pill, paddingHorizontal: 11, paddingVertical: 6 }}>
+      <Icon name={icon} size={14} color={C.muted} />
+      <Text numberOfLines={1} style={{ color: C.ink, fontSize: 13, writingDirection: dir.writing, ...ff(500) }}>{text}</Text>
     </View>
   );
   return (
-    <LinearGradient colors={sky} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      style={[{ borderRadius: R.xl, padding: 20, paddingBottom: 18, overflow: 'hidden' }, shadow(2)]}>
-      <View style={{ position: 'absolute', bottom: -34, [dir.rtl ? 'left' : 'right']: -24, opacity: 0.16 }}>
-        <Icon name={skyIcon(isToday ? hour : 13)} size={170} color="#fff" />
-      </View>
-      {label ? <Txt v="small" style={{ color: white(0.85), ...ff(600) }}>{label}</Txt> : null}
-      <Txt v="display" style={{ color: '#fff', marginTop: 2 }}>{f.long(date)}</Txt>
-      {heb || hol ? (
-        <Row gap={8} style={{ marginTop: 4, flexWrap: 'wrap' }}>
-          {heb ? <Txt v="small" style={{ color: white(0.85), ...ff(500) }}>{formatHebrew(lang, heb)}</Txt> : null}
-          {hol ? (
-            <View style={{ backgroundColor: '#fff', borderRadius: R.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
-              <Txt v="tiny" style={{ color: sky[1], ...ff(700) }}>{holidayName(lang, hol.key)}</Txt>
-            </View>
+    <Glass intensity={50} style={[{ borderRadius: R.xl, padding: 20, paddingBottom: 18 }, shadow(2)]}>
+      <Row justify="space-between" align="flex-start">
+        <View style={{ flex: 1 }}>
+          {label ? <Txt v="small" style={{ color: C.primary, ...ff(600) }}>{label}</Txt> : null}
+          <Txt v="display" style={{ marginTop: 2 }}>{f.long(date)}</Txt>
+          {heb || hol ? (
+            <Row gap={8} style={{ marginTop: 4, flexWrap: 'wrap' }}>
+              {heb ? <Txt v="small" style={{ color: C.muted, ...ff(500) }}>{formatHebrew(lang, heb)}</Txt> : null}
+              {hol ? (
+                <View style={{ backgroundColor: C.primarySoft, borderRadius: R.pill, paddingHorizontal: 9, paddingVertical: 2 }}>
+                  <Txt v="tiny" style={{ color: C.primary, ...ff(700) }}>{holidayName(lang, hol.key)}</Txt>
+                </View>
+              ) : null}
+            </Row>
           ) : null}
-        </Row>
-      ) : null}
+        </View>
+        {isToday ? <Icon name={skyIcon(hour)} size={30} color={C.primary} /> : null}
+      </Row>
 
       {data.settings.modules.tasks ? (
         <View style={{ marginTop: 18 }}>
           <Row justify="space-between">
-            <Txt v="strong" style={{ color: '#fff', ...ff(600) }}>
+            <Txt v="strong" style={{ ...ff(600) }}>
               {total === 0 ? t('hero.free') : left === 0 ? t('hero.allDone') : t('hero.tasksLeft', { n: left })}
             </Txt>
-            {total ? <Txt v="strong" style={{ color: white(0.9), ...ff(700) }}>{t('hero.done', { done, total })}</Txt> : null}
+            {total ? <Txt v="strong" style={{ color: C.primary, ...ff(700) }}>{t('hero.done', { done, total })}</Txt> : null}
           </Row>
           {total ? (
-            <View style={{ height: 8, borderRadius: 4, backgroundColor: white(0.25), marginTop: 9, overflow: 'hidden' }}>
-              <View style={{ height: 8, borderRadius: 4, backgroundColor: '#fff', width: `${Math.round((done / total) * 100)}%`, alignSelf: dir.start }} />
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: C.sunken, marginTop: 10, overflow: 'hidden' }}>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: C.primary, width: `${Math.round((done / total) * 100)}%`, alignSelf: dir.start }} />
             </View>
           ) : null}
         </View>
@@ -73,11 +71,11 @@ function Hero({ date, isToday, hour, items, label }) {
 
       {items.people.length || items.lists.length ? (
         <Row gap={8} style={{ marginTop: 14, flexWrap: 'wrap' }}>
-          {items.people.slice(0, 2).map((p) => pill('gift', t('hero.bday', { name: p.name }), p.id))}
-          {items.lists.length ? pill('basket', t('hero.lists', { n: items.lists.length }), 'lists') : null}
+          {items.people.slice(0, 2).map((p) => pill('gift-outline', t('hero.bday', { name: p.name }), p.id))}
+          {items.lists.length ? pill('basket-outline', t('hero.lists', { n: items.lists.length }), 'lists') : null}
         </Row>
       ) : null}
-    </LinearGradient>
+    </Glass>
   );
 }
 
@@ -89,17 +87,15 @@ function WeekStrip({ today, date, setDate, data }) {
       {days.map((d) => {
         const sel = d === date;
         const it = dayItems(data, d);
-        const dots = [it.tasks.length && C.primary, it.people.length && C.bday, it.lists.length && C.shop].filter(Boolean);
+        const has = it.tasks.length || it.people.length || it.lists.length;
         return (
           <Pressable key={d} onPress={() => { haptic(); setDate(d); }} style={({ pressed }) => [{
             flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: R.md, gap: 2,
-            backgroundColor: sel ? C.ink : C.card, transform: [{ scale: pressed ? 0.96 : 1 }],
+            backgroundColor: sel ? C.primary : C.card, transform: [{ scale: pressed ? 0.96 : 1 }],
           }, sel ? null : shadow(1)]}>
-            <Text style={{ fontSize: 11.5, color: sel ? C.bg : C.faint, ...ff(600) }}>{f.weekdaysShort[parseDate(d).getDay()]}</Text>
-            <Text style={{ fontSize: 17, color: sel ? C.bg : C.ink, ...ff(700) }}>{Number(d.slice(8))}</Text>
-            <View style={{ flexDirection: 'row', gap: 2, height: 5 }}>
-              {dots.map((c, i) => <View key={i} style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: c }} />)}
-            </View>
+            <Text style={{ fontSize: 11.5, color: sel ? 'rgba(255,255,255,0.8)' : C.faint, ...ff(600) }}>{f.weekdaysShort[parseDate(d).getDay()]}</Text>
+            <Text style={{ fontSize: 17, color: sel ? C.onPrimary : C.ink, ...ff(700) }}>{Number(d.slice(8))}</Text>
+            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: has ? (sel ? C.onPrimary : C.primary) : 'transparent' }} />
           </Pressable>
         );
       })}

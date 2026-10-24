@@ -17,30 +17,63 @@ function Meta({ icon, text, color }) {
   );
 }
 
+const openSubs = new Set(); // which tasks have their steps opened (kept while the app runs)
+
 export function TaskRow({ task, date, onToggle, onPress, right, showDate }) {
-  const { t, f } = useI18n();
+  const { t, f, dir } = useI18n();
+  const { actions } = useStore();
   const done = date ? isDoneOn(task, date) : task.status === 'done';
   const high = task.priority === 'high' && !done;
   const subs = task.subtasks || [];
+  const subsDone = subs.filter((x) => x.done).length;
+  const [open, setOpen] = useState(openSubs.has(task.id));
+  const toggleOpen = () => {
+    haptic();
+    if (open) openSubs.delete(task.id); else openSubs.add(task.id);
+    setOpen(!open);
+  };
+  const inset = dir.row === 'row-reverse' ? { marginRight: 40 } : { marginLeft: 40 };
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-      <Row style={{ paddingVertical: 13, paddingHorizontal: 4 }} gap={14} align="center">
-        <Check checked={done} onPress={onToggle} color={high ? C.high : C.primary} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Txt v="strong" style={done ? { color: C.faint, textDecorationLine: 'line-through' } : null} numberOfLines={2}>{task.title}</Txt>
-          {(showDate && task.date) || task.time || isRecurring(task) || high || subs.length ? (
-            <Row gap={12} style={{ flexWrap: 'wrap' }}>
-              {task.time ? <Meta icon="alarm-outline" text={task.time} color={done ? C.faint : C.primary} /> : null}
-              {showDate && task.date ? <Meta icon="calendar-clear-outline" text={f.short(task.date)} /> : null}
-              {isRecurring(task) ? <Meta icon="repeat" text={t(`task.${task.repeat.type}`)} /> : null}
-              {subs.length ? <Meta icon="list" text={`${subs.filter((x) => x.done).length}/${subs.length}`} color={subs.every((x) => x.done) ? C.shop : null} /> : null}
-              {high ? <Meta icon="flag" text={t('task.high')} color={C.high} /> : null}
-            </Row>
+    <View>
+      <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+        <Row style={{ paddingVertical: 13, paddingHorizontal: 4 }} gap={14} align="center">
+          <Check checked={done} onPress={onToggle} color={high ? C.high : C.primary} />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Txt v="strong" style={done ? { color: C.faint, textDecorationLine: 'line-through' } : null} numberOfLines={2}>{task.title}</Txt>
+            {(showDate && task.date) || task.time || isRecurring(task) || high ? (
+              <Row gap={12} style={{ flexWrap: 'wrap' }}>
+                {task.time ? <Meta icon="alarm-outline" text={task.time} color={done ? C.faint : C.primary} /> : null}
+                {showDate && task.date ? <Meta icon="calendar-clear-outline" text={f.short(task.date)} /> : null}
+                {isRecurring(task) ? <Meta icon="repeat" text={t(`task.${task.repeat.type}`)} /> : null}
+                {high ? <Meta icon="flag" text={t('task.high')} color={C.high} /> : null}
+              </Row>
+            ) : null}
+          </View>
+          {subs.length ? (
+            <Pressable onPress={toggleOpen} hitSlop={8} accessibilityLabel={t('sub.title')} style={({ pressed }) => ({
+              flexDirection: dir.row, alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: R.pill,
+              backgroundColor: open ? C.primary : C.primarySoft, opacity: pressed ? 0.8 : 1,
+            })}>
+              <Txt v="tiny" style={{ color: open ? C.onPrimary : C.primary, ...ff(700) }}>{`${subsDone}/${subs.length}`}</Txt>
+              <Icon name={open ? 'chevron-up' : 'chevron-down'} size={14} color={open ? C.onPrimary : C.primary} />
+            </Pressable>
           ) : null}
+          {right}
+        </Row>
+      </Pressable>
+      {open && subs.length ? (
+        <View style={[{ paddingBottom: 8 }, inset]}>
+          {subs.map((s2) => (
+            <Pressable key={s2.id} onPress={() => actions.toggleSubtask(task.id, s2.id)}>
+              <Row gap={10} style={{ paddingVertical: 7 }}>
+                <Check size={20} checked={s2.done} onPress={() => actions.toggleSubtask(task.id, s2.id)} />
+                <Txt v="small" style={[{ flex: 1 }, s2.done ? { color: C.faint, textDecorationLine: 'line-through' } : null]}>{s2.title}</Txt>
+              </Row>
+            </Pressable>
+          ))}
         </View>
-        {right}
-      </Row>
-    </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -116,7 +149,7 @@ export function ListCard({ list, onPress, showDate }) {
     <Card onPress={onPress} style={{ marginBottom: 12, opacity: isDone ? 0.6 : 1 }}>
       <Row gap={14} align="flex-start">
         <View style={{ width: 46, height: 46, borderRadius: 16, backgroundColor: C.shopSoft, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name={isDone ? 'checkmark-done' : 'basket'} size={23} color={C.shop} />
+          <Icon name={isDone ? 'checkmark-done' : 'basket-outline'} size={23} color={C.primary} />
         </View>
         <View style={{ flex: 1, gap: 6 }}>
           <Row justify="space-between" gap={8}>
@@ -232,7 +265,7 @@ export function QuickAdd({ defaultDate }) {
 }
 
 // Checklist of steps inside a task.
-export function Subtasks({ items, onChange }) {
+export function Subtasks({ items, onChange, autoFocus }) {
   const { t, dir } = useI18n();
   const [text, setText] = useState('');
   const add = () => {
@@ -268,6 +301,7 @@ export function Subtasks({ items, onChange }) {
           submitBehavior="submit"
           returnKeyType="next"
           placeholder={t('sub.ph')}
+          autoFocus={autoFocus}
           placeholderTextColor={C.faint}
           style={{ flex: 1, paddingVertical: 10, fontSize: 15.5, color: C.ink, textAlign: dir.align, writingDirection: dir.writing, ...ff(400) }}
         />

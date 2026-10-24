@@ -32,18 +32,12 @@ export default function PeopleScreen({ nav, now }) {
 
   return (
     <Page big title={t('tabs.people')} onBack={nav.pop}
-      right={<Row gap={6}>
-        {Platform.OS !== 'web' ? <IconBtn name="people" bg={C.card} color={C.bday} onPress={() => nav.push('contacts')} label={t('contacts.title')} /> : null}
-        <IconBtn name="add" bg={C.bday} color={C.onPrimary} onPress={() => nav.push('person', {})} label={t('person.new')} />
-      </Row>}>
+      right={<IconBtn name="add" bg={C.bday} color={C.onPrimary} onPress={() => nav.push('person', {})} label={t('person.new')} />}>
       {data.people.length > 6 ? (
         <Input value={q} onChangeText={setQ} placeholder="🔍" style={{ marginTop: 14 }} />
       ) : null}
       {data.people.length === 0 ? <Empty icon="gift-outline" color={C.bday} body={t('person.empty')}
-        action={<View style={{ gap: 10, marginTop: 8, alignSelf: 'stretch' }}>
-          <Button title={t('contacts.title')} icon="people" color={C.bday} onPress={() => nav.push('contacts')} />
-          <Button variant="outline" title={t('person.new')} icon="add" onPress={() => nav.push('person', {})} />
-        </View>} /> : null}
+        action={<Button title={t('person.new')} icon="add" color={C.bday} onPress={() => nav.push('person', {})} style={{ marginTop: 8 }} />} /> : null}
       {groups.map((g) => (
         <Section key={g.key} title={f.monthTitle(Number(g.key.slice(0, 4)), Number(g.key.slice(5)) - 1)} count={String(g.items.length)}>
           <Group>

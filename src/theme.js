@@ -1,88 +1,87 @@
-// Design tokens. `C` is mutated in place when the theme switches (light/dark);
-// every style is computed at render time, so a re-render picks up the new values.
+// Design tokens — three colours only: a neutral background, ink, and one accent (indigo).
+// Every other tone is a transparency of those three, which gives the frosted-glass look.
+// `C` is mutated in place when the theme switches; styles are computed at render time.
 
 const LIGHT = {
   scheme: 'light',
-  bg: '#F1F3F8',
-  card: '#FFFFFF',
-  sunken: '#E7EAF2',
-  ink: '#151C33',
-  muted: '#5F6883',
-  faint: '#9AA2B8',
-  line: '#E2E6EF',
-  primary: '#4B57D6', // iris — tasks & main actions
-  primarySoft: '#E6E8FB',
+  bgFrom: '#F4F5F9',
+  bgTo: '#E4E6EE',
+  bg: '#EEEFF4',
+  ink: '#15171C',
+  muted: 'rgba(21,23,28,0.58)',
+  faint: 'rgba(21,23,28,0.32)',
+  line: 'rgba(21,23,28,0.08)',
+  sunken: 'rgba(21,23,28,0.05)',
+  card: 'rgba(255,255,255,0.66)',
+  glass: 'rgba(255,255,255,0.72)',
+  glassStrong: 'rgba(250,250,253,0.94)',
+  glassBorder: 'rgba(255,255,255,0.85)',
+  primary: '#5856D6',
+  primarySoft: 'rgba(88,86,214,0.12)',
   onPrimary: '#FFFFFF',
-  bday: '#D93D78', // raspberry — birthdays
-  bdaySoft: '#FBE4EE',
-  shop: '#0E9C83', // sea green — shopping
-  shopSoft: '#DDF3EE',
-  holiday: '#B7791F',
-  holidaySoft: '#FBF0DC',
-  danger: '#D2333F',
-  dangerSoft: '#FCE6E8',
-  high: '#E5484D',
-  overlay: 'rgba(12,16,32,0.42)',
-  tabBar: 'rgba(255,255,255,0.97)',
-  shadow: '#1A2350',
+  orb: 'rgba(88,86,214,0.16)',
+  overlay: 'rgba(15,16,22,0.28)',
+  tabBar: 'rgba(255,255,255,0.93)',
+  shadow: '#20223A',
+  danger: '#D93A3A',
+  dangerSoft: 'rgba(217,58,58,0.10)',
 };
 
 const DARK = {
   scheme: 'dark',
-  bg: '#0D1120',
-  card: '#181D31',
-  sunken: '#11162A',
-  ink: '#EDF0FA',
-  muted: '#A2A9C2',
-  faint: '#6A7290',
-  line: '#262C45',
-  primary: '#8C96FF',
-  primarySoft: '#262C57',
-  onPrimary: '#0D1120',
-  bday: '#FF7AAA',
-  bdaySoft: '#3D1D2E',
-  shop: '#4FD1B5',
-  shopSoft: '#123530',
-  holiday: '#F0B95A',
-  holidaySoft: '#3A2D14',
-  danger: '#FF6B74',
-  dangerSoft: '#3D1A20',
-  high: '#FF6B74',
-  overlay: 'rgba(0,0,0,0.6)',
-  tabBar: 'rgba(24,29,49,0.98)',
+  bgFrom: '#0C0D12',
+  bgTo: '#171925',
+  bg: '#101118',
+  ink: '#F2F3F7',
+  muted: 'rgba(242,243,247,0.62)',
+  faint: 'rgba(242,243,247,0.34)',
+  line: 'rgba(242,243,247,0.09)',
+  sunken: 'rgba(242,243,247,0.06)',
+  card: 'rgba(255,255,255,0.06)',
+  glass: 'rgba(30,31,42,0.66)',
+  glassStrong: 'rgba(24,25,34,0.96)',
+  glassBorder: 'rgba(255,255,255,0.10)',
+  primary: '#7D7AFF',
+  primarySoft: 'rgba(125,122,255,0.16)',
+  onPrimary: '#FFFFFF',
+  orb: 'rgba(125,122,255,0.20)',
+  overlay: 'rgba(0,0,0,0.5)',
+  tabBar: 'rgba(28,29,38,0.95)',
   shadow: '#000000',
+  danger: '#FF6B6B',
+  dangerSoft: 'rgba(255,107,107,0.14)',
 };
 
-export const C = { ...LIGHT };
-export function applyTheme(scheme) {
-  Object.assign(C, scheme === 'dark' ? DARK : LIGHT);
-}
-
-export const R = { sm: 10, md: 14, lg: 22, xl: 28, pill: 999 };
-
-export function shadow(level = 1) {
-  if (C.scheme === 'dark') return { borderWidth: 1, borderColor: C.line };
+// Category colours collapse onto the same three: accent for tasks/actions, ink for the rest.
+function derive(p) {
   return {
-    shadowColor: C.shadow,
-    shadowOpacity: level === 2 ? 0.12 : 0.05,
-    shadowRadius: level === 2 ? 18 : 8,
-    shadowOffset: { width: 0, height: level === 2 ? 8 : 2 },
-    elevation: level === 2 ? 6 : 1,
+    ...p,
+    bday: p.primary, bdaySoft: p.primarySoft,
+    shop: p.primary, shopSoft: p.primarySoft,
+    holiday: p.primary, holidaySoft: p.primarySoft,
+    high: p.primary,
   };
 }
 
-// Sky gradients for the Today hero — the one bold element of the design.
-export function skyFor(hour) {
-  if (C.scheme === 'dark') {
-    if (hour >= 5 && hour < 11) return ['#2A3A78', '#5A4C8F', '#B0708A'];
-    if (hour >= 11 && hour < 17) return ['#22337A', '#3550A8', '#4F7BC4'];
-    if (hour >= 17 && hour < 21) return ['#2D1F55', '#6B3B78', '#B4587A'];
-    return ['#0B1030', '#1A2152', '#2B2F6B'];
-  }
-  if (hour >= 5 && hour < 11) return ['#FFB88C', '#F9A8B8', '#9DB4FF']; // dawn
-  if (hour >= 11 && hour < 17) return ['#5B8CFF', '#6E7CF2', '#9A8CF0']; // day
-  if (hour >= 17 && hour < 21) return ['#5B4BC4', '#B05AA8', '#FF8A7A']; // dusk
-  return ['#141B44', '#2B2F7A', '#4A3E95']; // night
+export const C = { ...derive(LIGHT) };
+export function applyTheme(scheme) {
+  Object.assign(C, derive(scheme === 'dark' ? DARK : LIGHT));
+}
+
+export const R = { sm: 12, md: 16, lg: 24, xl: 32, pill: 999 };
+
+// Glass surfaces: translucent fill + a thin bright edge + a very soft shadow.
+export function shadow(level = 1) {
+  const edge = { borderWidth: 1, borderColor: C.glassBorder };
+  if (C.scheme === 'dark') return edge;
+  return {
+    ...edge,
+    shadowColor: C.shadow,
+    shadowOpacity: level === 2 ? 0.10 : 0.05,
+    shadowRadius: level === 2 ? 24 : 12,
+    shadowOffset: { width: 0, height: level === 2 ? 10 : 4 },
+    elevation: 0,
+  };
 }
 
 // Font families (Rubik covers Hebrew, Cyrillic and Latin). Falls back to system fonts.

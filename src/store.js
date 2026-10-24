@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { todayStr, addDays } from './logic/dates';
-import { normName } from './logic/departments';
+import { normName, classify, deptOrder } from './logic/departments';
 
 const KEY = 'remindme:data:v1';
 export const STORAGE_KEY = KEY;
@@ -30,7 +30,6 @@ export const DEFAULT_DATA = {
   people: [],
   lists: [],
   itemHistory: {},
-  places: [],
   deptLearned: {},
 };
 
@@ -45,7 +44,8 @@ export function migrate(raw) {
   d.people = Array.isArray(raw.people) ? raw.people : [];
   d.lists = Array.isArray(raw.lists) ? raw.lists : [];
   d.itemHistory = raw.itemHistory && typeof raw.itemHistory === 'object' ? raw.itemHistory : {};
-  d.places = Array.isArray(raw.places) ? raw.places : [];
+  delete d.places;
+  d.lists = d.lists.map(({ placeId, ...l }) => l);
   d.deptLearned = raw.deptLearned && typeof raw.deptLearned === 'object' ? raw.deptLearned : {};
   d.version = SCHEMA_VERSION;
   return d;
@@ -215,6 +215,9 @@ export function StoreProvider({ children }) {
 
       // ----- subtasks -----
       setSubtasks: (taskId, subtasks) => upTask(taskId, (x) => ({ ...x, subtasks })),
+      toggleSubtask: (taskId, subId) => upTask(taskId, (x) => ({
+        ...x, subtasks: (x.subtasks || []).map((st) => (st.id === subId ? { ...st, done: !st.done } : st)),
+      })),
 
       // ----- departments -----
       setItemCat: (listId, itemId, cat) => up((d) => {
@@ -228,21 +231,17 @@ export function StoreProvider({ children }) {
         };
       }),
 
-      // ----- places (location reminders) -----
-      savePlace: (p) => {
-        const id = p.id || uid();
-        up((d) => ({ ...d, places: replaceIn(d.places, { ...p, id }) }));
-        return id;
-      },
-      deletePlace: (id) => up((d) => ({
-        ...d, places: d.places.filter((x) => x.id !== id),
-        lists: d.lists.map((l) => (l.placeId === id ? { ...l, placeId: null } : l)),
+      // Re-order a shopping list by supermarket department (only when the user asks).
+      sortListByDept: (listId) => up((d) => ({
+        ...d,
+        lists: d.lists.map((l) => {
+          if (l.id !== listId) return l;
+          const keyed = l.items.map((it, i) => ({ it, i, o: deptOrder(it.cat || classify(it.name, d.deptLearned)) }));
+          keyed.sort((a, b) => (a.it.checked - b.it.checked) || (a.o - b.o) || (a.i - b.i));
+          return { ...l, items: keyed.map((k) => k.it) };
+        }),
       })),
-
-      // ----- contacts import -----
-      addPeople: (people) => up((d) => ({
-        ...d, people: [...d.people, ...people.map((p) => ({ ...p, id: uid(), createdAt: Date.now() }))],
-      })),
+      setItemsOrder: (listId, items) => upList(listId, (l) => ({ ...l, items })),
 
       // ----- undo -----
       restoreTask: (task) => up((d) => ({ ...d, tasks: replaceIn(d.tasks, task) })),

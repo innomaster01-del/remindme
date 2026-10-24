@@ -91,6 +91,7 @@ export function TaskEditor({ nav, params }) {
     repeat: { type: 'none', days: [] }, status: 'open', doneDates: [],
   });
   const [err, setErr] = useState(null);
+  const [showSteps, setShowSteps] = useState(false);
   const set = (patch) => setTask((x) => ({ ...x, ...patch }));
   const repeat = task.repeat || { type: 'none' };
 
@@ -158,12 +159,18 @@ export function TaskEditor({ nav, params }) {
           ))}
         </Row>
       </Field>
-      <Field label={t('sub.title')}>
-        <Subtasks items={task.subtasks || []} onChange={(subtasks) => {
-          set({ subtasks });
-          if (existing) actions.setSubtasks(existing.id, subtasks); // ticking a step saves right away
-        }} />
-      </Field>
+      {showSteps || (task.subtasks || []).length ? (
+        <Field label={t('sub.title')}>
+          <Subtasks items={task.subtasks || []} autoFocus={showSteps && !(task.subtasks || []).length} onChange={(subtasks) => {
+            set({ subtasks });
+            if (existing) actions.setSubtasks(existing.id, subtasks); // ticking a step saves right away
+          }} />
+        </Field>
+      ) : (
+        <Row style={{ marginBottom: 18 }}>
+          <Button small variant="soft" icon="list" title={t('sub.add')} onPress={() => setShowSteps(true)} />
+        </Row>
+      )}
       <Field label={t('common.notes')}>
         <Input value={task.notes} onChangeText={(v) => set({ notes: v })} placeholder={t('task.notesPh')} multiline />
       </Field>

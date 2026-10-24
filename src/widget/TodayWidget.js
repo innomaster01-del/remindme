@@ -8,8 +8,8 @@ import { occursOn, isDoneOn, isBirthdayOn } from '../logic/recurrence';
 import { hebrewFromDateStr, formatHebrew } from '../logic/hebrew';
 
 const THEMES = {
-  light: { bg: '#FFFFFF', ink: '#151C33', muted: '#5F6883', faint: '#9AA2B8', line: '#E2E6EF', primary: '#4B57D6', bday: '#D93D78', shop: '#0E9C83', from: '#5B8CFF', to: '#9A8CF0' },
-  dark: { bg: '#181D31', ink: '#EDF0FA', muted: '#A2A9C2', faint: '#6A7290', line: '#262C45', primary: '#8C96FF', bday: '#FF7AAA', shop: '#4FD1B5', from: '#22337A', to: '#4F7BC4' },
+  light: { bg: '#F7F7FA', ink: '#15171C', muted: '#6B6D75', faint: '#A5A7AE', line: '#E4E5EA', primary: '#5856D6', bday: '#15171C', shop: '#5856D6', from: '#5856D6', to: '#6F6DE0' },
+  dark: { bg: '#17181F', ink: '#F2F3F7', muted: '#A4A6AE', faint: '#62646C', line: '#2A2B33', primary: '#7D7AFF', bday: '#F2F3F7', shop: '#7D7AFF', from: '#4A48C4', to: '#5F5DD6' },
 };
 
 export function widgetModel(data, now = new Date()) {
