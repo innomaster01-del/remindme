@@ -170,3 +170,27 @@ import { birthdayInYear as bIY, nextBirthday as nB } from '../src/logic/recurren
 }
 console.log(`hebrew birthday checks: ${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;
+
+// --- supermarket departments ---
+import { classify } from '../src/logic/departments';
+{
+  const C2 = (n) => classify(n);
+  eq('dept milk', C2('חלב'), 'dairy');
+  eq('dept halva', C2('חלבה'), 'snacks');
+  eq('dept tomatoes', C2('עגבניות שרי'), 'produce');
+  eq('dept dish soap', C2('סבון כלים'), 'cleaning');
+  eq('dept soap', C2('סבון גוף'), 'personal');
+  eq('dept pita', C2('פיתות'), 'bakery');
+  eq('dept tea word', C2('תה ירוק'), 'pantry');
+  eq('dept black pepper', C2('פלפל שחור'), 'pantry');
+  eq('dept pepper', C2('פלפל אדום'), 'produce');
+  eq('dept eggplant en', C2('Eggplant'), 'produce');
+  eq('dept ice cream en', C2('ice cream'), 'frozen');
+  eq('dept ru butter', C2('масло сливочное'), 'dairy');
+  eq('dept ru oil', C2('масло подсолнечное'), 'pantry');
+  eq('dept ru beans', C2('фасоль'), 'pantry');
+  eq('dept unknown', C2('מתנה לדנה'), 'other');
+  eq('dept learned', classify('חלב', { 'חלב': 'drinks' }), 'drinks');
+}
+console.log(`department checks: ${passed} passed, ${failed} failed`);
+if (failed) process.exitCode = 1;

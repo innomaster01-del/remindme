@@ -21,17 +21,19 @@ export function TaskRow({ task, date, onToggle, onPress, right, showDate }) {
   const { t, f } = useI18n();
   const done = date ? isDoneOn(task, date) : task.status === 'done';
   const high = task.priority === 'high' && !done;
+  const subs = task.subtasks || [];
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
       <Row style={{ paddingVertical: 13, paddingHorizontal: 4 }} gap={14} align="center">
         <Check checked={done} onPress={onToggle} color={high ? C.high : C.primary} />
         <View style={{ flex: 1, gap: 4 }}>
           <Txt v="strong" style={done ? { color: C.faint, textDecorationLine: 'line-through' } : null} numberOfLines={2}>{task.title}</Txt>
-          {(showDate && task.date) || task.time || isRecurring(task) || high ? (
+          {(showDate && task.date) || task.time || isRecurring(task) || high || subs.length ? (
             <Row gap={12} style={{ flexWrap: 'wrap' }}>
               {task.time ? <Meta icon="alarm-outline" text={task.time} color={done ? C.faint : C.primary} /> : null}
               {showDate && task.date ? <Meta icon="calendar-clear-outline" text={f.short(task.date)} /> : null}
               {isRecurring(task) ? <Meta icon="repeat" text={t(`task.${task.repeat.type}`)} /> : null}
+              {subs.length ? <Meta icon="list" text={`${subs.filter((x) => x.done).length}/${subs.length}`} color={subs.every((x) => x.done) ? C.shop : null} /> : null}
               {high ? <Meta icon="flag" text={t('task.high')} color={C.high} /> : null}
             </Row>
           ) : null}
@@ -225,6 +227,52 @@ export function QuickAdd({ defaultDate }) {
           <Txt v="tiny" style={{ flex: 1, ...ff(400) }} numberOfLines={1}>{parsed.title}</Txt>
         </Row>
       ) : null}
+    </View>
+  );
+}
+
+// Checklist of steps inside a task.
+export function Subtasks({ items, onChange }) {
+  const { t, dir } = useI18n();
+  const [text, setText] = useState('');
+  const add = () => {
+    const parts = text.split(/\n+/).map((x) => x.trim()).filter(Boolean);
+    if (!parts.length) return;
+    haptic();
+    onChange([...items, ...parts.map((title) => ({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title, done: false }))]);
+    setText('');
+  };
+  const done = items.filter((x) => x.done).length;
+  return (
+    <View style={{ backgroundColor: C.card, borderRadius: R.md, paddingHorizontal: 12, paddingVertical: 4 }}>
+      {items.length ? (
+        <View style={{ height: 4, borderRadius: 2, backgroundColor: C.sunken, marginTop: 10, marginBottom: 4, overflow: 'hidden' }}>
+          <View style={{ height: 4, borderRadius: 2, backgroundColor: C.primary, width: `${Math.round((done / items.length) * 100)}%`, alignSelf: dir.start }} />
+        </View>
+      ) : null}
+      {items.map((s) => (
+        <Row key={s.id} gap={12} style={{ paddingVertical: 9 }}>
+          <Check size={22} checked={s.done} onPress={() => onChange(items.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)))} />
+          <Txt style={[{ flex: 1 }, s.done ? { color: C.faint, textDecorationLine: 'line-through' } : null]}>{s.title}</Txt>
+          <IconBtn name="close" size={16} color={C.faint} style={{ width: 30, height: 30 }} label={t('common.delete')}
+            onPress={() => onChange(items.filter((x) => x.id !== s.id))} />
+        </Row>
+      ))}
+      <Row gap={10} style={{ paddingVertical: 4 }}>
+        <Icon name="add-circle-outline" size={22} color={C.primary} />
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          onSubmitEditing={add}
+          blurOnSubmit={false}
+          submitBehavior="submit"
+          returnKeyType="next"
+          placeholder={t('sub.ph')}
+          placeholderTextColor={C.faint}
+          style={{ flex: 1, paddingVertical: 10, fontSize: 15.5, color: C.ink, textAlign: dir.align, writingDirection: dir.writing, ...ff(400) }}
+        />
+        {text.trim() ? <IconBtn name="arrow-up" size={18} color={C.onPrimary} bg={C.primary} onPress={add} style={{ width: 32, height: 32 }} /> : null}
+      </Row>
     </View>
   );
 }

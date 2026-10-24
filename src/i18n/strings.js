@@ -373,6 +373,67 @@ const EXTRA2 = {
 };
 merge(he, EXTRA2.he); merge(en, EXTRA2.en); merge(ru, EXTRA2.ru);
 
+// ---------- v1.3 additions ----------
+const EXTRA3 = {
+  he: {
+    sub: { title: 'שלבים', ph: 'הוספת שלב…' },
+    dept: { title: 'מחלקה', sortLabel: 'סדר', byDept: 'לפי מחלקות', byAdded: 'לפי הוספה', hint: 'לחיצה ארוכה על פריט כדי לשנות מחלקה — האפליקציה תזכור' },
+    contacts: {
+      title: 'ייבוא מאנשי הקשר', found: 'נמצאו {n} אנשי קשר עם תאריך לידה', none: 'לא נמצאו אנשי קשר עם תאריך לידה',
+      denied: 'כדי לייבא צריך לאשר גישה לאנשי הקשר', import: { one: 'ייבוא איש קשר אחד', other: 'ייבוא {n} אנשי קשר' },
+      imported: { one: 'יובא יום הולדת אחד', other: 'יובאו {n} ימי הולדת' }, exists: 'כבר קיים', all: 'בחירת הכל', none2: 'ניקוי הבחירה',
+    },
+    geo: {
+      remindAt: 'תזכורת כשמגיעים ל…', remindHint: 'כשתגיעו למקום, תקפוץ התראה עם מה שנשאר לקנות',
+      newPlace: 'מקום חדש', defaultName: 'סופר', name: 'שם המקום', where: 'איפה זה?', useHere: 'אני נמצא שם עכשיו',
+      or: 'או', addressPh: 'כתובת, למשל: שופרסל דיל, הרצליה', search: 'חיפוש', found: 'המיקום נשמר', here: 'המיקום הנוכחי',
+      radius: 'רדיוס', radiusHint: 'כמה קרוב צריך להגיע כדי לקבל את ההתראה', meters: 'מ׳', saved: 'המקום נשמר',
+      needLocation: 'צריך לבחור מיקום — ״אני נמצא שם עכשיו״ או חיפוש כתובת', notFound: 'לא נמצא מיקום. נסו כתובת אחרת',
+      noPermission: 'צריך לאשר גישה למיקום', places: 'מקומות', arrived: '📍 הגעת ל{place}',
+      permTitle: 'התראה כשמגיעים', permWhy: 'כדי להזכיר גם כשהאפליקציה סגורה, צריך לאשר גישה למיקום ״כל הזמן״. המיקום נשאר בטלפון ולא נשלח לשום מקום.',
+    },
+  },
+  en: {
+    sub: { title: 'Steps', ph: 'Add a step…' },
+    dept: { title: 'Department', sortLabel: 'Order', byDept: 'By aisle', byAdded: 'As added', hint: 'Long-press an item to change its department — it will be remembered' },
+    contacts: {
+      title: 'Import from contacts', found: '{n} contacts with a birthday', none: 'No contacts with a birthday were found',
+      denied: 'Allow access to contacts to import birthdays', import: { one: 'Import 1 contact', other: 'Import {n} contacts' },
+      imported: { one: '1 birthday imported', other: '{n} birthdays imported' }, exists: 'already added', all: 'Select all', none2: 'Clear',
+    },
+    geo: {
+      remindAt: 'Remind me when I arrive at…', remindHint: 'When you get there, you’ll get a notification with what’s left to buy',
+      newPlace: 'New place', defaultName: 'Supermarket', name: 'Place name', where: 'Where is it?', useHere: 'I’m there right now',
+      or: 'or', addressPh: 'Address, e.g. 5 Main St, Springfield', search: 'Search', found: 'Location saved', here: 'Current location',
+      radius: 'Radius', radiusHint: 'How close you need to get for the alert', meters: 'm', saved: 'Place saved',
+      needLocation: 'Pick a location — “I’m there right now” or search an address', notFound: 'Location not found. Try another address',
+      noPermission: 'Location access is needed', places: 'Places', arrived: '📍 You’ve arrived at {place}',
+      permTitle: 'Alert on arrival', permWhy: 'To remind you even when the app is closed, allow location access “all the time”. Your location stays on the phone.',
+    },
+  },
+  ru: {
+    sub: { title: 'Шаги', ph: 'Добавить шаг…' },
+    dept: { title: 'Отдел', sortLabel: 'Порядок', byDept: 'По отделам', byAdded: 'Как добавлено', hint: 'Долгое нажатие на товар — сменить отдел (приложение запомнит)' },
+    contacts: {
+      title: 'Импорт из контактов', found: 'Контактов с днём рождения: {n}', none: 'Контакты с днём рождения не найдены',
+      denied: 'Разрешите доступ к контактам, чтобы импортировать дни рождения',
+      import: { one: 'Импортировать {n} контакт', few: 'Импортировать {n} контакта', many: 'Импортировать {n} контактов', other: 'Импортировать {n} контакта' },
+      imported: { one: 'Импортирован {n} день рождения', few: 'Импортировано {n} дня рождения', many: 'Импортировано {n} дней рождения', other: 'Импортировано {n} дня рождения' },
+      exists: 'уже есть', all: 'Выбрать все', none2: 'Снять выбор',
+    },
+    geo: {
+      remindAt: 'Напомнить, когда я приду в…', remindHint: 'На месте придёт уведомление с тем, что осталось купить',
+      newPlace: 'Новое место', defaultName: 'Супермаркет', name: 'Название места', where: 'Где это?', useHere: 'Я сейчас там',
+      or: 'или', addressPh: 'Адрес, например: ул. Герцль 10, Хайфа', search: 'Найти', found: 'Место сохранено', here: 'Текущее местоположение',
+      radius: 'Радиус', radiusHint: 'Насколько близко нужно подойти для уведомления', meters: 'м', saved: 'Место сохранено',
+      needLocation: 'Выберите место — «Я сейчас там» или найдите адрес', notFound: 'Место не найдено. Попробуйте другой адрес',
+      noPermission: 'Нужен доступ к геолокации', places: 'Места', arrived: '📍 Вы пришли: {place}',
+      permTitle: 'Уведомление по прибытии', permWhy: 'Чтобы напоминать даже при закрытом приложении, разрешите доступ к геолокации «всегда». Данные остаются в телефоне.',
+    },
+  },
+};
+merge(he, EXTRA3.he); merge(en, EXTRA3.en); merge(ru, EXTRA3.ru);
+
 export const STRINGS = { he, en, ru };
 export const LANGS = [
   { code: 'he', label: 'עברית', rtl: true },

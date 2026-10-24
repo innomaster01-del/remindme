@@ -1,8 +1,20 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { todayStr, addDays } from './logic/dates';
+import { normName } from './logic/departments';
 
 const KEY = 'remindme:data:v1';
+export const STORAGE_KEY = KEY;
+
+// For code that runs without the UI (home-screen widget, location reminders).
+export async function loadData() {
+  const raw = await AsyncStorage.getItem(KEY);
+  return raw ? migrate(JSON.parse(raw)) : { ...DEFAULT_DATA };
+}
+export async function saveData(d) {
+  await AsyncStorage.setItem(KEY, JSON.stringify({ ...d, savedAt: Date.now() }));
+}
 export const SCHEMA_VERSION = 1;
 
 export const DEFAULT_DATA = {
@@ -18,6 +30,8 @@ export const DEFAULT_DATA = {
   people: [],
   lists: [],
   itemHistory: {},
+  places: [],
+  deptLearned: {},
 };
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -31,6 +45,8 @@ export function migrate(raw) {
   d.people = Array.isArray(raw.people) ? raw.people : [];
   d.lists = Array.isArray(raw.lists) ? raw.lists : [];
   d.itemHistory = raw.itemHistory && typeof raw.itemHistory === 'object' ? raw.itemHistory : {};
+  d.places = Array.isArray(raw.places) ? raw.places : [];
+  d.deptLearned = raw.deptLearned && typeof raw.deptLearned === 'object' ? raw.deptLearned : {};
   d.version = SCHEMA_VERSION;
   return d;
 }
@@ -55,23 +71,45 @@ const norm = (s) => s.trim().toLowerCase();
 export function StoreProvider({ children }) {
   const [data, setData] = useState(null);
   const saveTimer = useRef(null);
+  const lastSaved = useRef(0);
+  const skipSave = useRef(false);
 
   useEffect(() => {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(KEY);
-        setData(raw ? migrate(JSON.parse(raw)) : DEFAULT_DATA);
+        const parsed = raw ? JSON.parse(raw) : null;
+        lastSaved.current = parsed?.savedAt || 0;
+        skipSave.current = true;
+        setData(parsed ? migrate(parsed) : DEFAULT_DATA);
       } catch (e) {
         setData(DEFAULT_DATA);
       }
     })();
+    // The widget can change data while the app is in the background — pick that up on return.
+    const sub = AppState.addEventListener('change', async (st) => {
+      if (st !== 'active') return;
+      try {
+        const raw = await AsyncStorage.getItem(KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && (parsed.savedAt || 0) > lastSaved.current + 50) {
+          lastSaved.current = parsed.savedAt;
+          skipSave.current = true;
+          setData(migrate(parsed));
+        }
+      } catch (e) { /* noop */ }
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
     if (!data) return;
+    if (skipSave.current) { skipSave.current = false; return; }
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      AsyncStorage.setItem(KEY, JSON.stringify(data)).catch(() => {});
+      const savedAt = Date.now();
+      lastSaved.current = savedAt;
+      AsyncStorage.setItem(KEY, JSON.stringify({ ...data, savedAt })).catch(() => {});
     }, 250);
   }, [data]);
 
@@ -174,6 +212,37 @@ export function StoreProvider({ children }) {
         });
         return newId;
       },
+
+      // ----- subtasks -----
+      setSubtasks: (taskId, subtasks) => upTask(taskId, (x) => ({ ...x, subtasks })),
+
+      // ----- departments -----
+      setItemCat: (listId, itemId, cat) => up((d) => {
+        const list = d.lists.find((l) => l.id === listId);
+        const item = list && list.items.find((i) => i.id === itemId);
+        if (!item) return d;
+        return {
+          ...d,
+          deptLearned: { ...d.deptLearned, [normName(item.name)]: cat },
+          lists: d.lists.map((l) => (l.id === listId ? mapItems(l, (i) => (i.id === itemId ? { ...i, cat } : i)) : l)),
+        };
+      }),
+
+      // ----- places (location reminders) -----
+      savePlace: (p) => {
+        const id = p.id || uid();
+        up((d) => ({ ...d, places: replaceIn(d.places, { ...p, id }) }));
+        return id;
+      },
+      deletePlace: (id) => up((d) => ({
+        ...d, places: d.places.filter((x) => x.id !== id),
+        lists: d.lists.map((l) => (l.placeId === id ? { ...l, placeId: null } : l)),
+      })),
+
+      // ----- contacts import -----
+      addPeople: (people) => up((d) => ({
+        ...d, people: [...d.people, ...people.map((p) => ({ ...p, id: uid(), createdAt: Date.now() }))],
+      })),
 
       // ----- undo -----
       restoreTask: (task) => up((d) => ({ ...d, tasks: replaceIn(d.tasks, task) })),

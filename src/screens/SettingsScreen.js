@@ -114,6 +114,23 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         </Section>
       ) : null}
 
+      {data.places.length ? (
+        <Section title={t('geo.places')} icon="location" color={C.shop}>
+          <Card style={{ paddingVertical: 4 }}>
+            {data.places.map((p, i) => (
+              <Pressable key={p.id} onPress={() => nav.push('place', { id: p.id })}
+                style={{ paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                <Row gap={10}>
+                  <Icon name="location" size={18} color={C.shop} />
+                  <Txt style={{ flex: 1 }}>{p.name}</Txt>
+                  <Txt v="tiny">{`${p.radius || 200} ${t('geo.meters')}`}</Txt>
+                </Row>
+              </Pressable>
+            ))}
+          </Card>
+        </Section>
+      ) : null}
+
       <Section title={t('settings.modules')} icon="apps" color={C.shop}>
         <Card style={{ paddingVertical: 4 }}>
           <Toggle icon="checkmark-circle" color={C.primary} label={t('tabs.tasks')} value={s.modules.tasks} onChange={(v) => setModule('tasks', v)} />
@@ -137,7 +154,7 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         ])} />
       </Section>
 
-      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.2.0</Txt>
+      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.3.0</Txt>
 
       <Sheet visible={importOpen} onClose={() => setImportOpen(false)} title={t('settings.import')}>
         <Input value={importText} onChangeText={setImportText} placeholder={t('settings.importPh')} multiline style={{ minHeight: 140, textAlign: 'left', writingDirection: 'ltr' }} />

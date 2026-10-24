@@ -2,7 +2,7 @@
   "expo": {
     "name": "Remind Me",
     "slug": "remindme",
-    "version": "1.2.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -24,7 +24,11 @@
         "SCHEDULE_EXACT_ALARM",
         "USE_EXACT_ALARM",
         "POST_NOTIFICATIONS",
-        "VIBRATE"
+        "VIBRATE",
+        "READ_CONTACTS",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION"
       ]
     },
     "plugins": [
@@ -34,7 +38,45 @@
           "icon": "./assets/notification-icon.png",
           "color": "#4B57D6"
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Remind Me reads birthdays from your contacts so you can import them."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Remind Me uses your location to remind you about your shopping list when you arrive at a store.",
+          "locationWhenInUsePermission": "Remind Me uses your location to save the places you shop at.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": false
+        }
+      ],
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Today",
+              "label": "Remind Me",
+              "description": "Today: tasks, birthdays and shopping",
+              "minWidth": "250dp",
+              "minHeight": "180dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 3,
+              "maxResizeWidth": "500dp",
+              "maxResizeHeight": "500dp",
+              "resizeMode": "horizontal|vertical",
+              "previewImage": "./assets/widget-preview.png",
+              "updatePeriodMillis": 1800000,
+              "widgetCategory": "home_screen"
+            }
+          ]
+        }
       ]
-    ]
+    ],
+    "scheme": "remindme"
   }
 }

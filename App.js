@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { View, Pressable, Text, BackHandler, AppState, StatusBar, I18nManager, useColorScheme } from 'react-native';
+import { View, Pressable, Text, BackHandler, AppState, StatusBar, I18nManager, useColorScheme, Linking } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useFonts, Rubik_400Regular, Rubik_500Medium, Rubik_600SemiBold, Rubik_700Bold, Rubik_800ExtraBold,
@@ -18,11 +18,15 @@ import TasksScreen, { TaskEditor } from './src/screens/TasksScreen';
 import PeopleScreen, { PersonEditor } from './src/screens/PeopleScreen';
 import ShoppingScreen, { ListEditor, ListDetail } from './src/screens/ShoppingScreen';
 import SettingsScreen, { Onboarding } from './src/screens/SettingsScreen';
+import ContactsImport from './src/screens/ContactsImport';
+import PlaceEditor from './src/screens/PlaceEditor';
+import { syncGeofences } from './src/geo';
+import { updateWidget } from './src/widget';
 
 // The app handles right-to-left itself, so keep the native layout left-to-right.
 try { I18nManager.allowRTL(false); I18nManager.forceRTL(false); } catch (e) { /* noop */ }
 
-const STACK_SCREENS = { task: TaskEditor, person: PersonEditor, listEdit: ListEditor, list: ListDetail, people: PeopleScreen };
+const STACK_SCREENS = { task: TaskEditor, person: PersonEditor, listEdit: ListEditor, list: ListDetail, people: PeopleScreen, contacts: ContactsImport, place: PlaceEditor };
 
 function guessLang() {
   try {
@@ -146,6 +150,27 @@ function Main() {
   const dataRef = useRef(data);
   dataRef.current = data;
 
+  // Keep the home-screen widget and the location alerts in step with the data.
+  useEffect(() => {
+    const timer = setTimeout(() => { updateWidget(data); syncGeofences(data); }, 900);
+    return () => clearTimeout(timer);
+  }, [data.tasks, data.people, data.lists, data.places, data.settings, dayKey]);
+
+  // Deep links from the widget: remindme://add, remindme://list/<id>
+  const openAddRef = useRef(null);
+  useEffect(() => {
+    const handle = (url) => {
+      if (!url) return;
+      const m = url.match(/remindme:\/\/(\w+)(?:\/([\w-]+))?/);
+      if (!m) return;
+      if (m[1] === 'add' && openAddRef.current) { setStack([]); setTab('today'); openAddRef.current(todayStr()); }
+      if (m[1] === 'list' && m[2]) { setTab('today'); setStack([{ name: 'list', params: { id: m[2] }, key: 'l' + Date.now() }]); }
+    };
+    Linking.getInitialURL().then(handle).catch(() => {});
+    const sub = Linking.addEventListener('url', ({ url }) => handle(url));
+    return () => sub.remove();
+  }, []);
+
   // Notification taps and action buttons.
   useEffect(() => N.onResponse(({ action, data: d }) => {
     if (d.kind === 'task') {
@@ -200,6 +225,7 @@ function Main() {
     }
     setAddOpen(forDate);
   };
+  openAddRef.current = openAdd;
   const onFab = () => {
     if (tab === 'tasks') return nav.push('task', { date: todayStr() });
     if (tab === 'shopping') return nav.push('listEdit', { date: null });

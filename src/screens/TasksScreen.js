@@ -3,7 +3,7 @@ import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Segmented, useToast } from '../ui';
-import { QuickAdd } from '../components';
+import { QuickAdd, Subtasks } from '../components';
 import { TaskRow, Group } from '../components';
 import { DateField, TimeField } from '../pickers';
 import { C, ff, shadow } from '../theme';
@@ -157,6 +157,12 @@ export function TaskEditor({ nav, params }) {
               onPress={() => set({ priority: p })} style={{ flex: 1 }} />
           ))}
         </Row>
+      </Field>
+      <Field label={t('sub.title')}>
+        <Subtasks items={task.subtasks || []} onChange={(subtasks) => {
+          set({ subtasks });
+          if (existing) actions.setSubtasks(existing.id, subtasks); // ticking a step saves right away
+        }} />
       </Field>
       <Field label={t('common.notes')}>
         <Input value={task.notes} onChangeText={(v) => set({ notes: v })} placeholder={t('task.notesPh')} multiline />
