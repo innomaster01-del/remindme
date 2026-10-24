@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Segmented } from '../ui';
 import { TaskRow, Group } from '../components';
 import { DateField, TimeField } from '../pickers';
-import { C } from '../theme';
+import { C, ff, shadow } from '../theme';
 import { todayStr, addDays, weekday } from '../logic/dates';
 import { isRecurring, occursOn } from '../logic/recurrence';
 
@@ -35,15 +35,17 @@ export default function TasksScreen({ nav, now }) {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, paddingBottom: 120 }}>
       <Txt v="display">{t('tabs.tasks')}</Txt>
-      <Row style={{ marginTop: 14 }}>
-        <Chip label={`${t('task.open')} · ${open.length}`} selected={tab === 'open'} onPress={() => setTab('open')} />
-        <Chip label={t('task.completed')} selected={tab === 'done'} onPress={() => setTab('done')} />
-      </Row>
+      <View style={{ marginTop: 14 }}>
+        <Segmented value={tab} onChange={setTab} options={[
+          { value: 'open', label: `${t('task.open')} (${open.length})` },
+          { value: 'done', label: t('task.completed') },
+        ]} />
+      </View>
 
       {tab === 'open' ? (
         open.length === 0 ? <Empty icon="checkmark-done-outline" body={t('task.emptyOpen')} /> : (
           groups.filter((g) => g.items.length).map((g) => (
-            <Section key={g.key} title={g.title} color={g.color}>
+            <Section key={g.key} title={g.title} count={String(g.items.length)}>
               <Group>
                 {g.items.map((x) => (
                   <TaskRow key={x.id} task={x} date={isRecurring(x) ? rowDate(x, g.key) : undefined}
@@ -111,7 +113,7 @@ export function TaskEditor({ nav, params }) {
     >
       <Field>
         <Input value={task.title} onChangeText={(v) => { set({ title: v }); setErr(null); }} placeholder={t('task.titlePh')}
-          autoFocus={!existing} style={{ fontSize: 19, fontWeight: '600' }} returnKeyType="done" />
+          autoFocus={!existing} style={{ fontSize: 19, ...ff(600) }} returnKeyType="done" />
         {err ? <Txt v="small" style={{ color: C.danger }}>{err}</Txt> : null}
       </Field>
       <Field label={t('common.date')}>

@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Toggle, Card } from '../ui';
+import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Toggle, Card, IconBtn } from '../ui';
 import { BirthdayRow, Group } from '../components';
 import { TimeField } from '../pickers';
-import { C, R } from '../theme';
+import { C, R, ff, shadow } from '../theme';
 import { todayStr, daysInMonth } from '../logic/dates';
 import { nextBirthday } from '../logic/recurrence';
 
@@ -30,21 +30,21 @@ export default function PeopleScreen({ nav, now }) {
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, paddingBottom: 120 }}>
-      <Txt v="display">{t('tabs.people')}</Txt>
+    <Page big title={t('tabs.people')} onBack={nav.pop}
+      right={<IconBtn name="add" bg={C.bday} color={C.onPrimary} onPress={() => nav.push('person', {})} label={t('person.new')} />}>
       {data.people.length > 6 ? (
         <Input value={q} onChangeText={setQ} placeholder="🔍" style={{ marginTop: 14 }} />
       ) : null}
       {data.people.length === 0 ? <Empty icon="gift-outline" body={t('person.empty')}
         action={<Button title={t('person.new')} icon="add" onPress={() => nav.push('person', {})} style={{ marginTop: 8 }} />} /> : null}
       {groups.map((g) => (
-        <Section key={g.key} title={f.monthTitle(Number(g.key.slice(0, 4)), Number(g.key.slice(5)) - 1)} color={C.bday}>
+        <Section key={g.key} title={f.monthTitle(Number(g.key.slice(0, 4)), Number(g.key.slice(5)) - 1)} count={String(g.items.length)}>
           <Group>
             {g.items.map(({ p }) => <BirthdayRow key={p.id} person={p} from={today} onPress={() => nav.push('person', { id: p.id })} />)}
           </Group>
         </Section>
       ))}
-    </ScrollView>
+    </Page>
   );
 }
 
@@ -88,7 +88,7 @@ export function PersonEditor({ nav, params }) {
     >
       <Field label={t('person.name')}>
         <Input value={p.name} onChangeText={(v) => { set({ name: v }); setErr(null); }} placeholder={t('person.namePh')}
-          autoFocus={!existing} style={{ fontSize: 19, fontWeight: '600' }} />
+          autoFocus={!existing} style={{ fontSize: 19, ...ff(600) }} />
       </Field>
 
       <Field label={t('person.month')}>
@@ -114,9 +114,9 @@ export function PersonEditor({ nav, params }) {
                 return (
                   <Pressable key={d} onPress={() => { set({ day: d }); setErr(null); }} style={{
                     flex: 1, height: 40, borderRadius: R.sm, alignItems: 'center', justifyContent: 'center',
-                    backgroundColor: sel ? C.bday : C.card, borderWidth: 1, borderColor: sel ? C.bday : C.line,
+                    backgroundColor: sel ? C.bday : C.card,
                   }}>
-                    <Text style={{ color: sel ? '#fff' : C.ink, fontWeight: '600' }}>{d}</Text>
+                    <Text style={{ color: sel ? C.onPrimary : C.ink, ...ff(sel ? 700 : 500) }}>{d}</Text>
                   </Pressable>
                 );
               })}

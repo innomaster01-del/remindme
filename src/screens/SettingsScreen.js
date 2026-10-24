@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView, Alert, Share, Linking, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore, exportBackup, validateBackup } from '../store';
-import { useI18n, Row, Txt, Section, Card, Toggle, Button, Input, Sheet, Icon } from '../ui';
+import { useI18n, Row, Txt, Section, Card, Toggle, Button, Input, Sheet, Icon, Page, Segmented } from '../ui';
 import { TimeField } from '../pickers';
 import { LANGS } from '../i18n';
 import { C, R } from '../theme';
@@ -16,11 +16,11 @@ export function LanguagePicker({ value, onPick }) {
         return (
           <Pressable key={l.code} onPress={() => onPick(l.code)} style={({ pressed }) => ({
             backgroundColor: sel ? C.primary : C.card, borderRadius: R.lg, paddingVertical: 16, paddingHorizontal: 18,
-            borderWidth: 1, borderColor: sel ? C.primary : C.line, opacity: pressed ? 0.85 : 1,
+            opacity: pressed ? 0.85 : 1,
           })}>
             <Row justify="space-between">
-              <Txt v="h2" style={{ color: sel ? '#fff' : C.ink }}>{l.label}</Txt>
-              {sel ? <Icon name="checkmark-circle" color="#fff" /> : null}
+              <Txt v="h2" style={{ color: sel ? C.onPrimary : C.ink }}>{l.label}</Txt>
+              {sel ? <Icon name="checkmark-circle" color={C.onPrimary} /> : null}
             </Row>
           </Pressable>
         );
@@ -29,7 +29,7 @@ export function LanguagePicker({ value, onPick }) {
   );
 }
 
-export default function SettingsScreen({ notif, onRequestPermission, scheduledCount }) {
+export default function SettingsScreen({ nav, notif, onRequestPermission, scheduledCount }) {
   const { data, actions } = useStore();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
@@ -53,11 +53,22 @@ export default function SettingsScreen({ notif, onRequestPermission, scheduledCo
   };
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, paddingBottom: 120 }}>
-      <Txt v="display">{t('settings.title')}</Txt>
+    <Page big title={t('settings.title')} onBack={nav.pop}>
 
-      <Section title={t('settings.language')} icon="language">
+      <Section title={t('settings.language')} icon="language" color={C.bday}>
         <LanguagePicker value={s.lang} onPick={(code) => actions.setSettings({ lang: code })} />
+      </Section>
+
+      <Section title={t('settings.theme')} icon="contrast" color={C.ink}>
+        <Segmented value={s.theme || 'auto'} onChange={(v) => actions.setSettings({ theme: v })} options={[
+          { value: 'auto', label: t('settings.themeAuto') },
+          { value: 'light', label: t('settings.themeLight') },
+          { value: 'dark', label: t('settings.themeDark') },
+        ]} />
+        <Card style={{ marginTop: 12, paddingVertical: 4 }}>
+          <Toggle icon="star-outline" color={C.holiday} label={t('settings.hebrewDate')} hint={t('settings.hebrewDateHint')}
+            value={s.hebrewDate !== false} onChange={(v) => actions.setSettings({ hebrewDate: v })} />
+        </Card>
       </Section>
 
       <Section title={t('settings.notifications')} icon="notifications">
@@ -84,15 +95,15 @@ export default function SettingsScreen({ notif, onRequestPermission, scheduledCo
         </Card>
       </Section>
 
-      <Section title={t('settings.modules')} icon="apps">
+      <Section title={t('settings.modules')} icon="apps" color={C.shop}>
         <Card style={{ paddingVertical: 4 }}>
-          <Toggle label={t('tabs.tasks')} value={s.modules.tasks} onChange={(v) => setModule('tasks', v)} />
-          <Toggle label={t('tabs.people')} value={s.modules.birthdays} onChange={(v) => setModule('birthdays', v)} />
-          <Toggle label={t('tabs.shopping')} value={s.modules.shopping} onChange={(v) => setModule('shopping', v)} />
+          <Toggle icon="checkmark-circle" color={C.primary} label={t('tabs.tasks')} value={s.modules.tasks} onChange={(v) => setModule('tasks', v)} />
+          <Toggle icon="gift" color={C.bday} label={t('tabs.people')} value={s.modules.birthdays} onChange={(v) => setModule('birthdays', v)} />
+          <Toggle icon="basket" color={C.shop} label={t('tabs.shopping')} value={s.modules.shopping} onChange={(v) => setModule('shopping', v)} />
         </Card>
       </Section>
 
-      <Section title={t('settings.backup')} icon="cloud-upload">
+      <Section title={t('settings.backup')} icon="cloud-upload" color={C.holiday}>
         <Card style={{ gap: 10 }}>
           <Txt v="small" style={{ color: C.muted }}>{t('settings.backupHint')}</Txt>
           <Button variant="soft" icon="share-outline" title={t('settings.export')} onPress={() => Share.share({ message: exportBackup(data) })} />
@@ -107,13 +118,13 @@ export default function SettingsScreen({ notif, onRequestPermission, scheduledCo
         ])} />
       </Section>
 
-      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')} · {t('settings.version')} 1.0.0</Txt>
+      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.1.0</Txt>
 
       <Sheet visible={importOpen} onClose={() => setImportOpen(false)} title={t('settings.import')}>
         <Input value={importText} onChangeText={setImportText} placeholder={t('settings.importPh')} multiline style={{ minHeight: 140, textAlign: 'left', writingDirection: 'ltr' }} />
         <Button title={t('settings.import')} style={{ marginTop: 12 }} onPress={doImport} disabled={!importText.trim()} />
       </Sheet>
-    </ScrollView>
+    </Page>
   );
 }
 

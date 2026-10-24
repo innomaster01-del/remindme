@@ -3,6 +3,7 @@ import { occursOn, occurrencesBetween, birthdayInYear, nextBirthday, isDoneOn } 
 import { buildPlan, MAX_SCHEDULED, planSignature } from '../src/logic/scheduler';
 import { makeT, makeFormat } from '../src/i18n';
 import { addDays, diffDays } from '../src/logic/dates';
+import { hebrewFromDateStr, formatHebrew, holidayOn, gematria, rdFromDateStr, dateStrFromRd } from '../src/logic/hebrew';
 
 let passed = 0, failed = 0;
 function eq(name, a, b) {
@@ -116,6 +117,17 @@ for (const L of ['en', 'ru']) {
   const missing = heKeys.filter((k) => !lk.has(k));
   eq(`${L} has all keys`, missing, []);
 }
+
+// --- Hebrew calendar ---
+eq('heb 2026-10-24', hebrewFromDateStr('2026-10-24'), { year: 5787, month: 8, day: 13 });
+eq('heb format he', formatHebrew('he', hebrewFromDateStr('2026-10-24')), 'י״ג בחשון תשפ״ז');
+eq('rosh hashana 5787', holidayOn('2026-09-12')?.key, 'roshHashana');
+eq('pesach 5786', holidayOn('2026-04-02')?.key, 'pesach');
+eq('atzmaut 5786 (Wed)', holidayOn('2026-04-22')?.key, 'yomHaatzmaut');
+eq('atzmaut 5788 moved Mon->Tue', holidayOn('2028-05-02')?.key, 'yomHaatzmaut');
+eq('no holiday', holidayOn('2026-10-24'), null);
+eq('gematria 15', gematria(15), 'ט״ו');
+eq('roundtrip', dateStrFromRd(rdFromDateStr('2030-02-28')), '2030-02-28');
 
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) process.exitCode = 1;

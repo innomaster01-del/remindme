@@ -5,7 +5,7 @@ import { useStore } from '../store';
 import { useI18n, Row, Txt, Section, Empty, Chip, Input, Field, Button, Page, Check, IconBtn, Icon, Banner, Sheet } from '../ui';
 import { ListCard, Group } from '../components';
 import { DateField, TimeField, DatePickerSheet } from '../pickers';
-import { C, R } from '../theme';
+import { C, R, ff, shadow } from '../theme';
 import { todayStr, addDays } from '../logic/dates';
 
 export default function ShoppingScreen({ nav, now }) {
@@ -36,7 +36,7 @@ export default function ShoppingScreen({ nav, now }) {
         </Section>
       ) : null}
       {done.length ? (
-        <Section title={`${t('list.doneLists')} · ${done.length}`} color={C.muted}
+        <Section title={t('list.doneLists')} count={String(done.length)}
           right={<Button small variant="ghost" title={showDone ? '−' : '+'} onPress={() => setShowDone(!showDone)} />}>
           {showDone ? done.map((l) => <ListCard key={l.id} list={l} showDate onPress={() => nav.push('list', { id: l.id })} />) : null}
         </Section>
@@ -63,7 +63,7 @@ export function ListEditor({ nav, params }) {
       footer={<Button title={t('common.save')} icon="checkmark" onPress={save} />}>
       <Field label={t('common.title')}>
         <Input value={l.title} onChangeText={(v) => set({ title: v })} placeholder={t('list.titlePh')} autoFocus={!existing}
-          style={{ fontSize: 19, fontWeight: '600' }} />
+          style={{ fontSize: 19, ...ff(600) }} />
       </Field>
       <Field label={t('common.date')}>
         <DateField value={l.date} onChange={(v) => set({ date: v })} />
@@ -136,7 +136,7 @@ export function ListDetail({ nav, params }) {
       </Pressable>
       {item.qty ? (
         <View style={{ backgroundColor: item.checked ? C.bg : C.shopSoft, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-          <Txt v="tiny" style={{ color: item.checked ? C.faint : C.shop, fontWeight: '700' }}>{item.qty}</Txt>
+          <Txt v="tiny" style={{ color: item.checked ? C.faint : C.shop, ...ff(700) }}>{item.qty}</Txt>
         </View>
       ) : null}
       <IconBtn name="close" size={18} color={C.faint} onPress={() => actions.deleteItem(list.id, item.id)} label={t('common.delete')} />
@@ -204,7 +204,7 @@ export function ListDetail({ nav, params }) {
         </View>
       ) : null}
       {checked.length ? (
-        <Section title={`${t('list.bought')} · ${checked.length}`} color={C.muted}>
+        <Section title={t('list.bought')} count={String(checked.length)}>
           <Group>{checked.map((i) => <ItemRow key={i.id} item={i} />)}</Group>
         </Section>
       ) : null}

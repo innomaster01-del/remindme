@@ -175,7 +175,7 @@ const en = {
 
 const ru = {
   appName: 'Напомни мне',
-  tabs: { today: 'Сегодня', tasks: 'Задачи', people: 'Дни рожд.', shopping: 'Покупки', settings: 'Настройки' },
+  tabs: { today: 'Сегодня', tasks: 'Задачи', people: 'Дни рождения', shopping: 'Покупки', settings: 'Настройки' },
   common: {
     save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', edit: 'Изменить', done: 'Готово', close: 'Закрыть',
     today: 'Сегодня', tomorrow: 'Завтра', yesterday: 'Вчера', none: 'Нет', pickDate: 'Выбрать дату',
@@ -262,6 +262,60 @@ const ru = {
   monthsStandalone: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
   dateFmt: '{weekday}, {day} {month}', dateShort: '{day} {month}', dateWithYear: '{day} {month} {year}',
 };
+
+// ---------- v1.1 additions ----------
+const EXTRA = {
+  he: {
+    tabs: { calendar: 'יומן' },
+    calendar: { empty: 'אין כלום ביום הזה', add: 'הוספה ליום הזה', today: 'היום', holiday: 'חג', week: 'שבוע' },
+    hero: {
+      tasksLeft: { one: 'נשארה משימה אחת', other: 'נשארו {n} משימות' }, allDone: 'כל המשימות של היום בוצעו',
+      free: 'אין משימות להיום', bday: 'יום ההולדת של {name}', lists: { one: 'רשימת קניות אחת', other: '{n} רשימות קניות' },
+      done: '{done}/{total}',
+    },
+    settings: {
+      theme: 'מראה', themeAuto: 'לפי הטלפון', themeLight: 'בהיר', themeDark: 'כהה',
+      hebrewDate: 'תאריך עברי וחגים', hebrewDateHint: 'מוצג במסך הבית וביומן',
+    },
+    a11y: { birthdays: 'ימי הולדת', settings: 'הגדרות', prevMonth: 'החודש הקודם', nextMonth: 'החודש הבא' },
+  },
+  en: {
+    tabs: { calendar: 'Calendar' },
+    calendar: { empty: 'Nothing on this day', add: 'Add to this day', today: 'Today', holiday: 'Holiday', week: 'Week' },
+    hero: {
+      tasksLeft: { one: '1 task left', other: '{n} tasks left' }, allDone: 'All of today’s tasks are done',
+      free: 'No tasks today', bday: '{name}’s birthday', lists: { one: '1 shopping list', other: '{n} shopping lists' },
+      done: '{done}/{total}',
+    },
+    settings: {
+      theme: 'Appearance', themeAuto: 'Match phone', themeLight: 'Light', themeDark: 'Dark',
+      hebrewDate: 'Hebrew date & holidays', hebrewDateHint: 'Shown on the home screen and in the calendar',
+    },
+    a11y: { birthdays: 'Birthdays', settings: 'Settings', prevMonth: 'Previous month', nextMonth: 'Next month' },
+  },
+  ru: {
+    tabs: { calendar: 'Календарь' },
+    calendar: { empty: 'В этот день ничего нет', add: 'Добавить на этот день', today: 'Сегодня', holiday: 'Праздник', week: 'Неделя' },
+    hero: {
+      tasksLeft: { one: 'Осталась {n} задача', few: 'Осталось {n} задачи', many: 'Осталось {n} задач', other: 'Осталось {n} задачи' },
+      allDone: 'Все задачи на сегодня выполнены', free: 'На сегодня задач нет', bday: 'День рождения: {name}',
+      lists: { one: '{n} список покупок', few: '{n} списка покупок', many: '{n} списков покупок', other: '{n} списка покупок' },
+      done: '{done}/{total}',
+    },
+    settings: {
+      theme: 'Оформление', themeAuto: 'Как в телефоне', themeLight: 'Светлое', themeDark: 'Тёмное',
+      hebrewDate: 'Еврейская дата и праздники', hebrewDateHint: 'Показывается на главном экране и в календаре',
+    },
+    a11y: { birthdays: 'Дни рождения', settings: 'Настройки', prevMonth: 'Предыдущий месяц', nextMonth: 'Следующий месяц' },
+  },
+};
+function merge(a, b) {
+  for (const k of Object.keys(b)) {
+    if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !('other' in b[k])) merge(a[k], b[k]);
+    else a[k] = b[k];
+  }
+}
+merge(he, EXTRA.he); merge(en, EXTRA.en); merge(ru, EXTRA.ru);
 
 export const STRINGS = { he, en, ru };
 export const LANGS = [

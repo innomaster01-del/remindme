@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Pressable, Text } from 'react-native';
 import { useI18n, Row, Txt, Sheet, Button, IconBtn, Chip } from './ui';
-import { C, R } from './theme';
+import { C, R, ff } from './theme';
 import { toDateStr, parseDate, todayStr, addDays, daysInMonth, addMonths } from './logic/dates';
 
 // ---------- Calendar month grid ----------
@@ -36,7 +36,7 @@ export function DatePickerSheet({ visible, value, onPick, onClose, title }) {
       <Row gap={0}>
         {f.weekdaysShort.map((w, i) => (
           <View key={i} style={{ flex: 1, alignItems: 'center', paddingVertical: 6 }}>
-            <Text style={{ color: C.muted, fontWeight: '700', fontSize: 13 }}>{w}</Text>
+            <Text style={{ color: C.faint, fontSize: 13, ...ff(600) }}>{w}</Text>
           </View>
         ))}
       </Row>
@@ -52,9 +52,9 @@ export function DatePickerSheet({ visible, value, onPick, onClose, title }) {
                 onPress={() => { onPick(ds); onClose(); }}>
                 <View style={{
                   width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: sel ? C.primary : 'transparent', borderWidth: isToday && !sel ? 1.5 : 0, borderColor: C.primary,
+                  backgroundColor: sel ? C.primary : isToday ? C.primarySoft : 'transparent',
                 }}>
-                  <Text style={{ color: sel ? '#fff' : C.ink, fontSize: 16, fontWeight: isToday ? '700' : '500' }}>{d}</Text>
+                  <Text style={{ color: sel ? C.onPrimary : isToday ? C.primary : C.ink, fontSize: 16, ...ff(isToday || sel ? 700 : 400) }}>{d}</Text>
                 </View>
               </Pressable>
             );
@@ -86,9 +86,9 @@ function Grid({ items, cols, selected, onPick, render }) {
             return (
               <Pressable key={v} onPress={() => onPick(v)} style={{
                 flex: 1, height: 42, borderRadius: R.sm, alignItems: 'center', justifyContent: 'center',
-                backgroundColor: sel ? C.primary : C.card, borderWidth: 1, borderColor: sel ? C.primary : C.line,
+                backgroundColor: sel ? C.primary : C.card,
               }}>
-                <Text style={{ color: sel ? '#fff' : C.ink, fontWeight: '600', fontSize: 15 }}>{render(v)}</Text>
+                <Text style={{ color: sel ? C.onPrimary : C.ink, fontSize: 15, ...ff(sel ? 700 : 500) }}>{render(v)}</Text>
               </Pressable>
             );
           })}
@@ -109,7 +109,7 @@ export function TimePickerSheet({ visible, value, onPick, onClose }) {
   return (
     <Sheet visible={visible} onClose={onClose} title={t('common.pickTime')}>
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
-        <Text style={{ fontSize: 44, fontWeight: '800', color: C.primary, fontVariant: ['tabular-nums'] }}>{pad(h)}:{pad(m)}</Text>
+        <Text style={{ fontSize: 52, color: C.primary, fontVariant: ['tabular-nums'], letterSpacing: -1, ...ff(700) }}>{pad(h)}:{pad(m)}</Text>
       </View>
       <Txt v="label" style={{ marginBottom: 8 }}>{t('common.hour')}</Txt>
       <Grid items={HOURS} cols={6} selected={h} onPick={setH} render={pad} />

@@ -1,10 +1,21 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import {
-  View, Text, Pressable, TextInput, Modal, Switch, ScrollView, I18nManager, Platform, KeyboardAvoidingView,
+  View, Text, Pressable, TextInput, Modal, Switch, ScrollView, I18nManager, Platform, KeyboardAvoidingView, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { C, R, shadow } from './theme';
+import * as Haptics from 'expo-haptics';
+import { C, R, shadow, ff } from './theme';
+
+// ---------- haptics ----------
+export function haptic(kind = 'select') {
+  try {
+    if (Platform.OS === 'web') return;
+    if (kind === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else if (kind === 'light') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    else Haptics.selectionAsync();
+  } catch (e) { /* noop */ }
+}
 
 // ---------- i18n / direction context ----------
 // The app controls direction itself (instead of the phone's system direction), so the
@@ -18,34 +29,34 @@ export function makeDir(rtl) {
   return {
     rtl,
     row: flip ? 'row-reverse' : 'row',
-    // RN mirrors 'left'/'right' text alignment in native RTL, so use the same flip rule.
     align: flip ? 'right' : 'left',
     alignOpp: flip ? 'left' : 'right',
+    start: flip ? 'flex-end' : 'flex-start',
     writing: rtl ? 'rtl' : 'ltr',
-    // icons that point "forward" / "back"
     fwd: rtl ? 'chevron-back' : 'chevron-forward',
     back: rtl ? 'chevron-forward' : 'chevron-back',
   };
 }
 
-// ---------- primitives ----------
-const VARIANTS = {
-  display: { fontSize: 30, fontWeight: '800', color: C.ink, letterSpacing: -0.3 },
-  title: { fontSize: 22, fontWeight: '700', color: C.ink },
-  h2: { fontSize: 17, fontWeight: '700', color: C.ink },
-  body: { fontSize: 16, color: C.ink },
-  small: { fontSize: 14, color: C.ink },
-  muted: { fontSize: 14, color: C.muted },
-  tiny: { fontSize: 12, color: C.muted },
-  label: { fontSize: 13, fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.4 },
-};
+// ---------- text ----------
+const VARIANTS = () => ({
+  display: { fontSize: 32, color: C.ink, letterSpacing: -0.6, lineHeight: 38, ...ff(800) },
+  title: { fontSize: 22, color: C.ink, letterSpacing: -0.3, ...ff(700) },
+  h2: { fontSize: 17, color: C.ink, ...ff(600) },
+  body: { fontSize: 16, color: C.ink, lineHeight: 22, ...ff(400) },
+  strong: { fontSize: 16, color: C.ink, lineHeight: 22, ...ff(500) },
+  small: { fontSize: 14, color: C.ink, lineHeight: 19, ...ff(400) },
+  muted: { fontSize: 14, color: C.muted, lineHeight: 19, ...ff(400) },
+  tiny: { fontSize: 12.5, color: C.muted, ...ff(500) },
+  label: { fontSize: 14, color: C.muted, ...ff(600) },
+});
 
-export function Txt({ v = 'body', style, center, children, ...rest }) {
+export function Txt({ v = 'body', w, style, center, children, ...rest }) {
   const { dir } = useI18n();
   return (
     <Text
       {...rest}
-      style={[VARIANTS[v], { textAlign: center ? 'center' : dir.align, writingDirection: dir.writing }, style]}
+      style={[VARIANTS()[v], w ? ff(w) : null, { textAlign: center ? 'center' : dir.align, writingDirection: dir.writing }, style]}
     >
       {children}
     </Text>
@@ -61,104 +72,140 @@ export function Row({ style, align = 'center', justify, gap = 8, children, ...re
   );
 }
 
-export function Icon({ name, size = 22, color = C.ink, style }) {
-  return <Ionicons name={name} size={size} color={color} style={style} />;
+export function Icon({ name, size = 22, color, style }) {
+  return <Ionicons name={name} size={size} color={color || C.ink} style={style} />;
 }
 
-export function Card({ style, children, onPress, tint }) {
+export function Card({ style, children, onPress, tint, flat }) {
   const body = (
-    <View style={[{ backgroundColor: tint || C.card, borderRadius: R.lg, padding: 14 }, shadow, style]}>{children}</View>
+    <View style={[{ backgroundColor: tint || C.card, borderRadius: R.lg, padding: 16 }, flat ? null : shadow(1), style]}>{children}</View>
   );
   if (!onPress) return body;
-  return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>{body}</Pressable>;
+  return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.88 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] })}>{body}</Pressable>;
 }
 
-export function Button({ title, onPress, variant = 'primary', icon, style, small, disabled }) {
+export function Button({ title, onPress, variant = 'primary', icon, style, small, disabled, color }) {
   const { dir } = useI18n();
+  const accent = color || C.primary;
   const palette = {
-    primary: { bg: C.primary, fg: '#fff' },
-    soft: { bg: C.primarySoft, fg: C.primary },
-    ghost: { bg: 'transparent', fg: C.primary },
+    primary: { bg: accent, fg: C.onPrimary },
+    soft: { bg: color ? C.card : C.primarySoft, fg: accent },
+    ghost: { bg: 'transparent', fg: accent },
     danger: { bg: C.dangerSoft, fg: C.danger },
     outline: { bg: C.card, fg: C.ink, border: C.line },
   }[variant];
   return (
     <Pressable
-      onPress={disabled ? undefined : onPress}
+      onPress={disabled ? undefined : () => { haptic('light'); onPress && onPress(); }}
       style={({ pressed }) => [{
-        backgroundColor: palette.bg, borderRadius: R.pill, paddingVertical: small ? 8 : 13,
-        paddingHorizontal: small ? 14 : 20, opacity: disabled ? 0.4 : pressed ? 0.8 : 1,
+        backgroundColor: palette.bg, borderRadius: R.pill, minHeight: small ? 36 : 52, justifyContent: 'center',
+        paddingHorizontal: small ? 14 : 22, opacity: disabled ? 0.4 : pressed ? 0.85 : 1,
         borderWidth: palette.border ? 1 : 0, borderColor: palette.border, alignItems: 'center',
+        transform: [{ scale: pressed ? 0.98 : 1 }],
       }, style]}
     >
-      <Row gap={6} justify="center">
-        {icon ? <Icon name={icon} size={small ? 16 : 19} color={palette.fg} /> : null}
-        <Text style={{ color: palette.fg, fontWeight: '700', fontSize: small ? 14 : 16, writingDirection: dir.writing }}>{title}</Text>
+      <Row gap={7} justify="center">
+        {icon ? <Icon name={icon} size={small ? 16 : 20} color={palette.fg} /> : null}
+        <Text style={{ color: palette.fg, fontSize: small ? 14 : 16, writingDirection: dir.writing, ...ff(600) }}>{title}</Text>
       </Row>
     </Pressable>
   );
 }
 
-export function IconBtn({ name, onPress, color = C.ink, size = 22, bg, style, label }) {
+export function IconBtn({ name, onPress, color, size = 22, bg, style, label, badge }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityLabel={label}
       hitSlop={8}
       style={({ pressed }) => [{
-        width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+        width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center',
         backgroundColor: bg || 'transparent', opacity: pressed ? 0.6 : 1,
       }, style]}
     >
-      <Icon name={name} size={size} color={color} />
+      <Icon name={name} size={size} color={color || C.ink} />
+      {badge ? <View style={{ position: 'absolute', top: 8, right: 8, width: 9, height: 9, borderRadius: 5, backgroundColor: C.bday, borderWidth: 2, borderColor: C.card }} /> : null}
     </Pressable>
   );
 }
 
-export function Chip({ label, selected, onPress, icon, color = C.primary, style }) {
+export function Chip({ label, selected, onPress, icon, color, style }) {
   const { dir } = useI18n();
+  const accent = color || C.primary;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={onPress ? () => { haptic(); onPress(); } : undefined}
       style={({ pressed }) => [{
-        paddingVertical: 8, paddingHorizontal: 14, borderRadius: R.pill,
-        backgroundColor: selected ? color : C.card, borderWidth: 1, borderColor: selected ? color : C.line,
-        opacity: pressed ? 0.8 : 1,
+        minHeight: 38, paddingHorizontal: 14, borderRadius: R.pill, justifyContent: 'center',
+        backgroundColor: selected ? accent : C.sunken, opacity: pressed ? 0.8 : 1,
       }, style]}
     >
       <Row gap={5} justify="center">
-        {icon ? <Icon name={icon} size={15} color={selected ? '#fff' : color} /> : null}
-        <Text style={{ color: selected ? '#fff' : C.ink, fontWeight: '600', fontSize: 14, writingDirection: dir.writing }}>{label}</Text>
+        {icon ? <Icon name={icon} size={15} color={selected ? C.onPrimary : accent} /> : null}
+        <Text numberOfLines={1} style={{ color: selected ? C.onPrimary : C.ink, fontSize: 14, writingDirection: dir.writing, ...ff(500) }}>{label}</Text>
       </Row>
     </Pressable>
   );
 }
 
-export function Check({ checked, onPress, color = C.primary, size = 26 }) {
+export function Segmented({ options, value, onChange }) {
+  const { dir } = useI18n();
   return (
-    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="checkbox" accessibilityState={{ checked }}>
-      <View style={{
+    <View style={{ flexDirection: dir.row, backgroundColor: C.sunken, borderRadius: R.pill, padding: 4 }}>
+      {options.map((o) => {
+        const sel = o.value === value;
+        return (
+          <Pressable key={o.value} onPress={() => { haptic(); onChange(o.value); }} style={[{
+            flex: 1, paddingVertical: 9, borderRadius: R.pill, alignItems: 'center', backgroundColor: sel ? C.card : 'transparent',
+          }, sel ? shadow(1) : null]}>
+            <Text style={{ fontSize: 14, color: sel ? C.ink : C.muted, writingDirection: dir.writing, ...ff(sel ? 600 : 500) }}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Round checkbox with a small "pop" when ticked.
+export function Check({ checked, onPress, color, size = 26 }) {
+  const accent = color || C.primary;
+  const scale = useRef(new Animated.Value(1)).current;
+  const press = () => {
+    if (!checked) {
+      haptic('success');
+      scale.setValue(0.7);
+      Animated.spring(scale, { toValue: 1, friction: 4, tension: 160, useNativeDriver: true }).start();
+    } else haptic();
+    onPress && onPress();
+  };
+  return (
+    <Pressable onPress={press} hitSlop={12} accessibilityRole="checkbox" accessibilityState={{ checked }}>
+      <Animated.View style={{
         width: size, height: size, borderRadius: size / 2, borderWidth: 2,
-        borderColor: checked ? color : C.faint, backgroundColor: checked ? color : 'transparent',
-        alignItems: 'center', justifyContent: 'center',
+        borderColor: checked ? accent : C.faint, backgroundColor: checked ? accent : 'transparent',
+        alignItems: 'center', justifyContent: 'center', transform: [{ scale }],
       }}>
-        {checked ? <Icon name="checkmark" size={size * 0.65} color="#fff" /> : null}
-      </View>
+        {checked ? <Icon name="checkmark" size={size * 0.62} color={C.onPrimary} /> : null}
+      </Animated.View>
     </Pressable>
   );
 }
 
 export function Input({ style, multiline, ...rest }) {
   const { dir } = useI18n();
+  const [focus, setFocus] = useState(false);
   return (
     <TextInput
       placeholderTextColor={C.faint}
       multiline={multiline}
+      onFocus={() => setFocus(true)}
+      onBlur={() => setFocus(false)}
+      selectionColor={C.primary}
       {...rest}
       style={[{
-        backgroundColor: C.card, borderRadius: R.md, borderWidth: 1, borderColor: C.line,
-        paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: C.ink,
-        textAlign: dir.align, writingDirection: dir.writing, minHeight: multiline ? 80 : undefined,
+        backgroundColor: C.card, borderRadius: R.md, borderWidth: 1.5, borderColor: focus ? C.primary : C.line,
+        paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, color: C.ink, ...ff(400),
+        textAlign: dir.align, writingDirection: dir.writing, minHeight: multiline ? 90 : undefined,
         textAlignVertical: multiline ? 'top' : 'center',
       }, style]}
     />
@@ -167,33 +214,43 @@ export function Input({ style, multiline, ...rest }) {
 
 export function Field({ label, hint, children, style }) {
   return (
-    <View style={[{ gap: 8, marginBottom: 18 }, style]}>
+    <View style={[{ gap: 10, marginBottom: 22 }, style]}>
       {label ? <Txt v="label">{label}</Txt> : null}
       {children}
-      {hint ? <Txt v="tiny">{hint}</Txt> : null}
+      {hint ? <Txt v="tiny" style={{ ...ff(400) }}>{hint}</Txt> : null}
     </View>
   );
 }
 
-export function Toggle({ label, value, onChange, hint }) {
+export function Toggle({ label, value, onChange, hint, icon, color }) {
   return (
-    <Row justify="space-between" style={{ paddingVertical: 8 }}>
+    <Row justify="space-between" style={{ paddingVertical: 10 }} gap={12}>
+      {icon ? (
+        <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.sunken, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={icon} size={18} color={color || C.primary} />
+        </View>
+      ) : null}
       <View style={{ flex: 1 }}>
         <Txt>{label}</Txt>
-        {hint ? <Txt v="tiny">{hint}</Txt> : null}
+        {hint ? <Txt v="tiny" style={{ ...ff(400) }}>{hint}</Txt> : null}
       </View>
-      <Switch value={!!value} onValueChange={onChange} trackColor={{ true: C.primary, false: C.line }} thumbColor="#fff" />
+      <Switch value={!!value} onValueChange={(v) => { haptic(); onChange(v); }} trackColor={{ true: C.primary, false: C.line }} thumbColor="#fff" />
     </Row>
   );
 }
 
-export function Section({ title, color = C.muted, icon, right, children, style }) {
+export function Section({ title, color, icon, right, children, style, count }) {
   return (
-    <View style={[{ marginTop: 22 }, style]}>
-      <Row justify="space-between" style={{ marginBottom: 10, paddingHorizontal: 4 }}>
-        <Row gap={6}>
-          {icon ? <Icon name={icon} size={16} color={color} /> : null}
-          <Txt v="label" style={{ color }}>{title}</Txt>
+    <View style={[{ marginTop: 26 }, style]}>
+      <Row justify="space-between" style={{ marginBottom: 10, paddingHorizontal: 2 }}>
+        <Row gap={8}>
+          {icon ? (
+            <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: color || C.primary, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name={icon} size={15} color={C.onPrimary} />
+            </View>
+          ) : null}
+          <Txt v="h2">{title}</Txt>
+          {count ? <Txt v="tiny" style={{ color: C.faint }}>{count}</Txt> : null}
         </Row>
         {right}
       </Row>
@@ -202,26 +259,28 @@ export function Section({ title, color = C.muted, icon, right, children, style }
   );
 }
 
-export function Empty({ icon, title, body, action }) {
+export function Empty({ icon, title, body, action, color }) {
+  const accent = color || C.primary;
   return (
-    <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 30, gap: 10 }}>
-      <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={34} color={C.primary} />
+    <View style={{ alignItems: 'center', paddingVertical: 44, paddingHorizontal: 30, gap: 10 }}>
+      <View style={{ width: 76, height: 76, borderRadius: 26, backgroundColor: C.sunken, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-6deg' }] }}>
+        <Icon name={icon} size={34} color={accent} />
       </View>
-      {title ? <Txt v="h2" center>{title}</Txt> : null}
+      {title ? <Txt v="h2" center style={{ marginTop: 6 }}>{title}</Txt> : null}
       {body ? <Txt v="muted" center>{body}</Txt> : null}
       {action}
     </View>
   );
 }
 
-export function Banner({ icon = 'alert-circle', text, action, onAction, color = C.danger, soft = C.dangerSoft }) {
+export function Banner({ icon = 'alert-circle', text, action, onAction, color, soft }) {
+  const fg = color || C.danger;
   return (
-    <View style={{ backgroundColor: soft, borderRadius: R.md, padding: 12, marginTop: 12 }}>
-      <Row align="flex-start">
-        <Icon name={icon} size={20} color={color} />
-        <View style={{ flex: 1, gap: 8 }}>
-          <Txt v="small" style={{ color }}>{text}</Txt>
+    <View style={{ backgroundColor: soft || C.dangerSoft, borderRadius: R.md, padding: 14, marginTop: 14 }}>
+      <Row align="flex-start" gap={10}>
+        <Icon name={icon} size={20} color={fg} />
+        <View style={{ flex: 1, gap: 10 }}>
+          <Txt v="small" style={{ color: fg, ...ff(500) }}>{text}</Txt>
           {action ? (
             <Row><Button small variant="outline" title={action} onPress={onAction} /></Row>
           ) : null}
@@ -231,28 +290,29 @@ export function Banner({ icon = 'alert-circle', text, action, onAction, color = 
   );
 }
 
-// Full-screen page with header (used for editors and detail screens).
-export function Page({ title, onBack, right, children, scroll = true, footer }) {
+// Full-screen page with a header (editors, details, birthdays, settings).
+export function Page({ title, onBack, right, children, scroll = true, footer, big }) {
   const insets = useSafeAreaInsets();
   const { dir } = useI18n();
   const Body = scroll ? ScrollView : View;
   return (
     <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
-      <Row style={{ paddingHorizontal: 8, paddingVertical: 6, minHeight: 52 }} gap={4}>
-        {onBack ? <IconBtn name={dir.back} onPress={onBack} size={26} /> : <View style={{ width: 8 }} />}
-        <Txt v="title" style={{ flex: 1 }} numberOfLines={1}>{title}</Txt>
+      <Row style={{ paddingHorizontal: 8, paddingVertical: 6, minHeight: 54 }} gap={4}>
+        {onBack ? <IconBtn name={dir.back} onPress={onBack} size={26} bg={C.card} /> : <View style={{ width: 8 }} />}
+        {!big ? <Txt v="title" style={{ flex: 1, marginHorizontal: 6 }} numberOfLines={1}>{title}</Txt> : <View style={{ flex: 1 }} />}
         {right}
       </Row>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Body
           style={{ flex: 1 }}
-          contentContainerStyle={scroll ? { padding: 16, paddingBottom: 40 + insets.bottom } : undefined}
+          contentContainerStyle={scroll ? { padding: 18, paddingTop: 6, paddingBottom: 40 + insets.bottom } : undefined}
           keyboardShouldPersistTaps="handled"
         >
+          {big ? <Txt v="display" style={{ marginBottom: 4 }}>{title}</Txt> : null}
           {children}
         </Body>
         {footer ? (
-          <View style={{ padding: 16, paddingBottom: 16 + insets.bottom, borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.bg }}>
+          <View style={{ padding: 16, paddingBottom: 16 + insets.bottom, backgroundColor: C.bg }}>
             {footer}
           </View>
         ) : null}
@@ -265,14 +325,14 @@ export function Page({ title, onBack, right, children, scroll = true, footer }) 
 export function Sheet({ visible, onClose, title, children }) {
   const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <Pressable style={{ flex: 1, backgroundColor: C.overlay }} onPress={onClose} />
       <View style={{
-        backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-        padding: 18, paddingBottom: 18 + insets.bottom, maxHeight: '88%',
+        backgroundColor: C.bg, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl,
+        padding: 20, paddingTop: 10, paddingBottom: 20 + insets.bottom, maxHeight: '90%',
       }}>
-        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.line, marginBottom: 12 }} />
-        {title ? <Txt v="h2" style={{ marginBottom: 14 }}>{title}</Txt> : null}
+        <View style={{ alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.line, marginBottom: 14 }} />
+        {title ? <Txt v="title" style={{ marginBottom: 16 }}>{title}</Txt> : null}
         <ScrollView keyboardShouldPersistTaps="handled">{children}</ScrollView>
       </View>
     </Modal>
