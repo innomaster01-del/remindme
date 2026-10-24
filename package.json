@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "setup": "npx expo install react react-native expo-notifications @react-native-async-storage/async-storage react-native-safe-area-context @expo/vector-icons expo-linear-gradient expo-haptics expo-font @expo-google-fonts/rubik react-native-android-widget expo-blur",
+    "setup": "npx expo install react react-native expo-notifications @react-native-async-storage/async-storage react-native-safe-area-context @expo/vector-icons expo-linear-gradient expo-haptics expo-font @expo-google-fonts/rubik react-native-android-widget expo-blur expo-build-properties",
     "start": "expo start",
     "start:tunnel": "expo start --tunnel",
     "android:apk": "eas build -p android --profile preview",

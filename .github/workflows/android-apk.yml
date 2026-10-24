@@ -89,13 +89,16 @@ jobs:
             (adb shell pidof com.remindme.personal && echo APP_RUNNING || echo APP_NOT_RUNNING) > /tmp/smoke-status.txt
             adb logcat -d -v brief > /tmp/logcat.txt || true
             adb exec-out screencap -p > out/smoke.png || true
+            adb shell uiautomator dump /sdcard/ui.xml || true
+            adb pull /sdcard/ui.xml /tmp/ui.xml || true
 
       - name: Report smoke test
         if: always()
         run: |
           status=$(cat /tmp/smoke-status.txt 2>/dev/null || echo NO_STATUS)
           grep -E "FATAL|AndroidRuntime|ReactNativeJS|ReactNative|Exception|Error|expo" /tmp/logcat.txt 2>/dev/null | grep -v "GoogleApiManager\|chromium\|Finsky" | head -120 > /tmp/smoke.log || true
-          msg=$( (echo "STATUS: $status"; cat /tmp/smoke.log) | tail -c 14000 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+          screen=$(grep -o 'text="[^"]*"' /tmp/ui.xml 2>/dev/null | sed 's/text=//' | tr -d '"' | grep -v '^$' | head -40 | tr '\n' '|')
+          msg=$( (echo "STATUS: $status"; echo "SCREEN: $screen"; cat /tmp/smoke.log) | tail -c 14000 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::warning title=smoke-test::$msg"
           if ! grep -q APP_RUNNING /tmp/smoke-status.txt 2>/dev/null || grep -q APP_NOT_RUNNING /tmp/smoke-status.txt; then echo "::error::App is not running after launch"; exit 1; fi
 
