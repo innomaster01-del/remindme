@@ -104,7 +104,6 @@ function WeekStrip({ today, date, onPick, data }) {
 }
 
 export default function TodayScreen({ nav, date, setDate, notifState, now, openDay }) {
-  React.useEffect(() => { console.log('[dbg] Today mount'); return () => console.log('[dbg] Today unmount'); }, []);
   const { data, actions } = useStore();
   const { t, f } = useI18n();
   const insets = useSafeAreaInsets();

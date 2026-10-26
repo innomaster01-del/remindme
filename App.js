@@ -71,7 +71,6 @@ function TabBar({ tab, setTab, tabs, onAdd }) {
 }
 
 function Main() {
-  useEffect(() => { console.log('[dbg] Main mount'); return () => console.log('[dbg] Main unmount'); }, []);
   const { data, actions } = useStore();
   const lang = data.settings.lang || guessLang();
   const system = useColorScheme();

@@ -209,10 +209,7 @@ export function AgendaRow({ color, icon, title, sub, onPress, done, right }) {
 }
 
 // Free-text quick add: "מחר ב-8 להתקשר לאמא" → task with date + time.
-const dbg = (m) => { try { console.log('[dbg] ' + m); } catch (e) { /* noop */ } };
-
 export function QuickAdd({ defaultDate }) {
-  React.useEffect(() => { dbg('quick-add mount'); return () => dbg('quick-add unmount'); }, []);
   const { t, f, dir } = useI18n();
   const { actions } = useStore();
   const toast = useToast();
@@ -245,8 +242,8 @@ export function QuickAdd({ defaultDate }) {
         <TextInput
           value={text}
           onChangeText={setText}
-          onFocus={() => { dbg('quick-add focus'); setFocus(true); }}
-          onBlur={() => { dbg('quick-add blur'); setFocus(false); }}
+          onFocus={() => setFocus(true)}
+          onBlur={() => setFocus(false)}
           accessibilityLabel="quick-add"
           placeholder={t('quick.ph')}
           placeholderTextColor={C.faint}

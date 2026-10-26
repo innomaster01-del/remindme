@@ -88,7 +88,7 @@ jobs:
         run: |
           status=$(cat /tmp/smoke/status.txt 2>/dev/null || echo NO_STATUS)
           grep -E "FATAL|AndroidRuntime: |E/ReactNativeJS|E/ReactNative" /tmp/smoke/logcat.txt 2>/dev/null | grep -v "START com.android.internal\|Using default boot\|lock profiling\|Calling main entry\|VM exiting" | head -60 > /tmp/smoke/errors.txt || true
-          msg=$( (echo "STATUS: $status"; cat /tmp/smoke/screens.txt 2>/dev/null; echo "--- errors ---"; cat /tmp/smoke/errors.txt) | head -c 14000 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+          msg=$( (echo "STATUS: $status"; echo "--- errors ---"; cut -c1-300 /tmp/smoke/errors.txt; echo "--- screens ---"; cat /tmp/smoke/screens.txt 2>/dev/null) | head -c 14000 | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::warning title=smoke-test::$msg"
           if ! grep -q APP_RUNNING /tmp/smoke/status.txt 2>/dev/null; then echo "::error::App is not running after launch"; exit 1; fi
           if grep -q 'reminder\] NOT POSTED' /tmp/smoke/screens.txt; then echo "::error::Reminder notification was not posted"; exit 1; fi

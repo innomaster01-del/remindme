@@ -95,7 +95,6 @@ export function StoreProvider({ children }) {
       try {
         const raw = await AsyncStorage.getItem(KEY);
         const parsed = raw ? JSON.parse(raw) : null;
-        console.log('[dbg] app active');
         if (parsed && (parsed.savedAt || 0) > lastSaved.current + 50) {
           lastSaved.current = parsed.savedAt;
           skipSave.current = true;
