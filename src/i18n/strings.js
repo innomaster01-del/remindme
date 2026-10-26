@@ -2,7 +2,7 @@
 // Plural keys are objects: { one, few, many, other } (Russian uses all; others use one/other).
 
 const he = {
-  appName: 'תזכיר לי',
+  appName: 'Poof Reminder',
   tabs: { today: 'היום', tasks: 'משימות', people: 'ימי הולדת', shopping: 'קניות', settings: 'הגדרות' },
   common: {
     save: 'שמירה', cancel: 'ביטול', delete: 'מחיקה', edit: 'עריכה', done: 'סיום', close: 'סגירה',
@@ -88,7 +88,7 @@ const he = {
 };
 
 const en = {
-  appName: 'Remind Me',
+  appName: 'Poof Reminder',
   tabs: { today: 'Today', tasks: 'Tasks', people: 'Birthdays', shopping: 'Shopping', settings: 'Settings' },
   common: {
     save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', done: 'Done', close: 'Close',
@@ -174,7 +174,7 @@ const en = {
 };
 
 const ru = {
-  appName: 'Напомни мне',
+  appName: 'Poof Reminder',
   tabs: { today: 'Сегодня', tasks: 'Задачи', people: 'Дни рождения', shopping: 'Покупки', settings: 'Настройки' },
   common: {
     save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить', edit: 'Изменить', done: 'Готово', close: 'Закрыть',

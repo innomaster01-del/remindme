@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Remind Me",
+    "name": "Poof Reminder",
     "slug": "remindme",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,7 +18,9 @@
       "package": "com.remindme.personal",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#5856D6"
+        "backgroundImage": "./assets/adaptive-bg.png",
+        "monochromeImage": "./assets/monochrome-icon.png",
+        "backgroundColor": "#5F5CDA"
       },
       "permissions": [
         "SCHEDULE_EXACT_ALARM",
@@ -54,7 +56,7 @@
           "widgets": [
             {
               "name": "Today",
-              "label": "Remind Me",
+              "label": "Poof Reminder",
               "description": "Today: tasks, birthdays and shopping",
               "minWidth": "250dp",
               "minHeight": "180dp",
@@ -82,6 +84,9 @@
         }
       ]
     ],
-    "scheme": "remindme"
+    "scheme": "remindme",
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }

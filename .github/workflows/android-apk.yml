@@ -64,7 +64,7 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p out
-          cp android/app/build/outputs/apk/release/app-release.apk out/RemindMe.apk
+          cp android/app/build/outputs/apk/release/app-release.apk out/PoofReminder.apk
           ls -la out
 
       - name: Enable KVM for the emulator
@@ -104,15 +104,15 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: RemindMe-apk
-          path: out/RemindMe.apk
+          name: PoofReminder-apk
+          path: out/PoofReminder.apk
 
       - name: Publish download page (GitHub Release)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Remind Me — build ${{ github.run_number }}
+          name: Poof Reminder — build ${{ github.run_number }}
           body: |
-            להורדה בטלפון אנדרואיד: לחצו על RemindMe.apk למטה, פתחו את הקובץ ואשרו התקנה.
-          files: out/RemindMe.apk
+            להורדה בטלפון אנדרואיד: לחצו על PoofReminder.apk למטה, פתחו את הקובץ ואשרו התקנה.
+          files: out/PoofReminder.apk
           make_latest: true

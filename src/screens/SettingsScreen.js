@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Alert, Share, Linking, Pressable, Platform } from 'react-native';
+import { View, ScrollView, Alert, Share, Linking, Pressable, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useStore, exportBackup, validateBackup } from '../store';
 import { useI18n, Row, Txt, Section, Card, Toggle, Button, Input, Sheet, Icon, Page, Segmented, useToast } from '../ui';
@@ -8,6 +8,11 @@ import { LANGS } from '../i18n';
 import { C, R, ff } from '../theme';
 import { supported, SOUNDS } from '../notifications';
 import { previewSound } from '../soundPreview';
+
+const LOGO = require('../../assets/icon.png');
+function AppLogo() {
+  return <Image source={LOGO} accessibilityLabel="Poof Reminder" style={{ width: 96, height: 96, borderRadius: 26, alignSelf: 'center' }} />;
+}
 
 export function LanguagePicker({ value, onPick }) {
   return (
@@ -156,7 +161,7 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         ])} />
       </Section>
 
-      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.5.1</Txt>
+      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.6.0</Txt>
 
       <Sheet visible={importOpen} onClose={() => setImportOpen(false)} title={t('settings.import')}>
         <Input value={importText} onChangeText={setImportText} placeholder={t('settings.importPh')} multiline style={{ minHeight: 140, textAlign: 'left', writingDirection: 'ltr' }} />
@@ -176,9 +181,7 @@ export function Onboarding({ onDone, onRequestPermission }) {
       {step === 0 ? (
         <View style={{ flex: 1, gap: 20 }}>
           <View style={{ alignItems: 'center', gap: 14, marginBottom: 10 }}>
-            <View style={{ width: 84, height: 84, borderRadius: 26, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon name="notifications" size={42} color="#fff" />
-            </View>
+            <AppLogo />
             <Txt v="title" center>בחרו שפה · Choose a language · Выберите язык</Txt>
           </View>
           <LanguagePicker value={data.settings.lang} onPick={(code) => { actions.setSettings({ lang: code }); setStep(1); }} />
@@ -186,9 +189,7 @@ export function Onboarding({ onDone, onRequestPermission }) {
       ) : (
         <View style={{ flex: 1, justifyContent: 'space-between' }}>
           <View style={{ gap: 18, marginTop: 30 }}>
-            <View style={{ width: 84, height: 84, borderRadius: 26, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}>
-              <Icon name="notifications" size={42} color="#fff" />
-            </View>
+            <AppLogo />
             <Txt v="display" center>{t('onboarding.welcomeTitle')}</Txt>
             <Txt center style={{ color: C.muted, fontSize: 17, lineHeight: 25 }}>{t('onboarding.welcomeBody')}</Txt>
             <Row justify="center" gap={14} style={{ marginTop: 10 }}>

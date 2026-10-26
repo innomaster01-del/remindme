@@ -3,7 +3,7 @@
 APP=com.remindme.personal
 OUT=/tmp/smoke
 mkdir -p $OUT
-adb install -r out/RemindMe.apk
+adb install -r out/PoofReminder.apk
 adb shell pm grant $APP android.permission.POST_NOTIFICATIONS || true
 adb logcat -c
 adb shell monkey -p $APP -c android.intent.category.LAUNCHER 1
