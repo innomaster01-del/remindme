@@ -71,15 +71,23 @@ export async function requestPermission() {
 }
 
 // Cancel everything and schedule the plan. Skips work when nothing changed.
-export async function sync(plan, sound = 'default', force = false) {
+// Runs one sync at a time so overlapping calls can't cancel each other's notifications.
+let queue = Promise.resolve();
+export function sync(plan, sound = 'default', force = false) {
+  const run = queue.then(() => doSync(plan, sound, force));
+  queue = run.catch(() => {});
+  return run;
+}
+
+async function doSync(plan, sound, force) {
   if (!supported) return 0;
   const sig = sound + '\n' + planSignature(plan);
   if (!force && sig === lastSig) return plan.items.length;
   lastSig = sig;
-  // Cancel everything we scheduled before (but leave a pending test notification alone).
+  // Cancel everything we scheduled before, then schedule the new plan.
   try {
     const pending = await Notifications.getAllScheduledNotificationsAsync();
-    await Promise.all(pending.filter((n) => n.identifier !== 'test').map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
+    await Promise.all(pending.map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier)));
   } catch (e) {
     await Notifications.cancelAllScheduledNotificationsAsync();
   }
@@ -105,17 +113,6 @@ export async function sync(plan, sound = 'default', force = false) {
     }
   }
   return plan.items.length;
-}
-
-// A one-off notification a few seconds from now, to check that reminders really arrive.
-export async function sendTest(t, sound = 'default', seconds = 5) {
-  if (!supported) return;
-  await configure(t, sound);
-  await Notifications.scheduleNotificationAsync({
-    identifier: 'test',
-    content: { title: t('reliable.testTitle'), body: t('reliable.testBody'), sound: contentSound(sound), data: { kind: 'test' } },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: channelFor(sound) },
-  });
 }
 
 export function onResponse(handler) {

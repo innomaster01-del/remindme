@@ -407,7 +407,7 @@ const EXTRA4 = {
     dept: { sortBtn: 'סדר לפי סוג' },
     sound: {
       title: 'צליל התראה', default: 'צליל הטלפון', chime: 'צלצול', bell: 'פעמון', soft: 'עדין', digital: 'דיגיטלי', silent: 'שקט (רטט בלבד)',
-      preview: 'ככה זה נשמע — התראה לדוגמה תגיע עוד רגע', hint: 'בחירת צליל משמיעה התראה לדוגמה',
+      preview: 'ככה זה נשמע — התראה לדוגמה תגיע עוד רגע', hint: 'לחיצה על צליל משמיעה אותו',
     },
   },
   en: {
@@ -425,7 +425,7 @@ const EXTRA4 = {
     dept: { sortBtn: 'Sort by type' },
     sound: {
       title: 'Notification sound', default: 'Phone default', chime: 'Chime', bell: 'Bell', soft: 'Soft', digital: 'Digital', silent: 'Silent (vibrate only)',
-      preview: 'This is how it sounds — a sample notification is on its way', hint: 'Choosing a sound plays a sample notification',
+      preview: 'This is how it sounds — a sample notification is on its way', hint: 'Tap a sound to hear it',
     },
   },
   ru: {
@@ -444,7 +444,7 @@ const EXTRA4 = {
     dept: { sortBtn: 'По типу' },
     sound: {
       title: 'Звук уведомления', default: 'Как в телефоне', chime: 'Перезвон', bell: 'Колокольчик', soft: 'Мягкий', digital: 'Цифровой', silent: 'Без звука (вибрация)',
-      preview: 'Так это звучит — сейчас придёт пример', hint: 'При выборе звука приходит пример уведомления',
+      preview: 'Так это звучит — сейчас придёт пример', hint: 'Нажмите на звук, чтобы его услышать',
     },
   },
 };

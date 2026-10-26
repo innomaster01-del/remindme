@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Pressable, Text } from 'react-native';
-import { useI18n, Row, Txt, Sheet, Button, IconBtn, Chip } from './ui';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Pressable, Text, ScrollView } from 'react-native';
+import { useI18n, Row, Txt, Sheet, Button, IconBtn, Chip, haptic } from './ui';
 import { C, R, ff } from './theme';
 import { toDateStr, parseDate, todayStr, addDays, daysInMonth, addMonths } from './logic/dates';
 
@@ -98,24 +98,76 @@ function Grid({ items, cols, selected, onPick, render }) {
   );
 }
 
+// Alarm-clock style wheels: hours 00–23 and minutes 00–59.
+const ITEM = 50;
+const VISIBLE = 5;
+function Wheel({ count, value, onChange, format, label }) {
+  const ref = useRef(null);
+  const [cur, setCur] = useState(value);
+  const last = useRef(value);
+  const ready = useRef(false); // ignore scroll events until the wheel is positioned on the initial value
+  const position = () => {
+    if (ref.current) ref.current.scrollTo({ y: value * ITEM, animated: false });
+    setTimeout(() => { ready.current = true; }, 250);
+  };
+  const pick = (i, fromScroll) => {
+    if (fromScroll && !ready.current) return;
+    const v = Math.max(0, Math.min(count - 1, i));
+    if (v === last.current) return;
+    last.current = v;
+    setCur(v);
+    haptic();
+    onChange(v);
+  };
+  return (
+    <View style={{ height: ITEM * VISIBLE, width: 92, overflow: 'hidden' }} accessibilityLabel={label}>
+      <View pointerEvents="none" style={{ position: 'absolute', top: ITEM * 2, left: 4, right: 4, height: ITEM, borderRadius: 14, backgroundColor: C.primarySoft }} />
+      <ScrollView
+        ref={ref}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={false}
+        snapToInterval={ITEM}
+        decelerationRate="fast"
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingVertical: ITEM * 2 }}
+        contentOffset={{ x: 0, y: value * ITEM }}
+        onLayout={() => setTimeout(position, 30)}
+        onScroll={(e) => pick(Math.round(e.nativeEvent.contentOffset.y / ITEM), true)}
+        onMomentumScrollEnd={(e) => pick(Math.round(e.nativeEvent.contentOffset.y / ITEM), true)}
+      >
+        {Array.from({ length: count }, (_, i) => {
+          const sel = i === cur;
+          return (
+            <Pressable key={i} onPress={() => { ref.current && ref.current.scrollTo({ y: i * ITEM, animated: true }); pick(i); }}
+              style={{ height: ITEM, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: sel ? 30 : 21, color: sel ? C.ink : C.faint, fontVariant: ['tabular-nums'], ...ff(sel ? 700 : 500) }}>{format(i)}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 export function TimePickerSheet({ visible, value, onPick, onClose }) {
   const { t } = useI18n();
   const parse = (v) => (v ? v.split(':').map(Number) : [9, 0]);
   const [h, setH] = useState(parse(value)[0]);
   const [m, setM] = useState(parse(value)[1]);
   useEffect(() => {
-    if (visible) { const [hh, mm] = parse(value); setH(hh); setM(mm - (mm % 5)); }
+    if (visible) { const [hh, mm] = parse(value); setH(hh); setM(mm); }
   }, [visible, value]);
   return (
     <Sheet visible={visible} onClose={onClose} title={t('common.pickTime')}>
-      <View style={{ alignItems: 'center', marginBottom: 12 }}>
-        <Text style={{ fontSize: 52, color: C.primary, fontVariant: ['tabular-nums'], letterSpacing: -1, ...ff(700) }}>{pad(h)}:{pad(m)}</Text>
-      </View>
-      <Txt v="label" style={{ marginBottom: 8 }}>{t('common.hour')}</Txt>
-      <Grid items={HOURS} cols={6} selected={h} onPick={setH} render={pad} />
-      <Txt v="label" style={{ marginTop: 16, marginBottom: 8 }}>{t('common.minute')}</Txt>
-      <Grid items={MINUTES} cols={6} selected={m} onPick={setM} render={(v) => ':' + pad(v)} />
-      <Button title={t('common.ok')} style={{ marginTop: 18 }} onPress={() => { onPick(`${pad(h)}:${pad(m)}`); onClose(); }} />
+      {visible ? (
+        // Time always reads left-to-right (HH:MM), also in Hebrew.
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <Wheel key={`h${value}`} count={24} value={h} onChange={setH} format={pad} label={t('common.hour')} />
+          <Text style={{ fontSize: 30, color: C.ink, ...ff(700), marginBottom: 4 }}>:</Text>
+          <Wheel key={`m${value}`} count={60} value={m} onChange={setM} format={pad} label={t('common.minute')} />
+        </View>
+      ) : null}
+      <Button title={`${t('common.ok')}  ${pad(h)}:${pad(m)}`} style={{ marginTop: 10 }} onPress={() => { onPick(`${pad(h)}:${pad(m)}`); onClose(); }} />
     </Sheet>
   );
 }

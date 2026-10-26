@@ -71,6 +71,7 @@ function TabBar({ tab, setTab, tabs, onAdd }) {
 }
 
 function Main() {
+  useEffect(() => { console.log('[dbg] Main mount'); return () => console.log('[dbg] Main unmount'); }, []);
   const { data, actions } = useStore();
   const lang = data.settings.lang || guessLang();
   const system = useColorScheme();
@@ -139,20 +140,27 @@ function Main() {
     return r;
   }, []);
 
-  // Re-plan notifications whenever data, language or the day changes.
-  const dayKey = todayStr(now) + ':' + now.getHours();
-  useEffect(() => {
-    if (perm !== 'granted') return undefined;
-    const timer = setTimeout(async () => {
-      const plan = buildPlan(data, new Date(), t);
-      setHorizon(plan.truncated && plan.horizon && plan.horizon.getTime() - Date.now() < 7 * 86400000);
-      try { setScheduled(await N.sync(plan, sound)); } catch (e) { /* noop */ }
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [data.tasks, data.people, data.lists, data.settings, perm, t, dayKey]);
-
   const dataRef = useRef(data);
   dataRef.current = data;
+  // Re-plan notifications whenever data, language or the day changes.
+  const dayKey = todayStr(now) + ':' + now.getHours();
+  const syncNow = useRef(null);
+  syncNow.current = async () => {
+    if (perm !== 'granted') return;
+    const plan = buildPlan(dataRef.current, new Date(), t);
+    setHorizon(plan.truncated && plan.horizon && plan.horizon.getTime() - Date.now() < 7 * 86400000);
+    try { setScheduled(await N.sync(plan, sound)); } catch (e) { /* noop */ }
+  };
+  useEffect(() => {
+    const timer = setTimeout(() => syncNow.current(), 250);
+    return () => clearTimeout(timer);
+  }, [data.tasks, data.people, data.lists, data.settings, perm, t, dayKey]);
+  // Make sure reminders are scheduled before the app goes to the background.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'background' || st === 'inactive') syncNow.current(); });
+    return () => sub.remove();
+  }, []);
+
 
   // Keep the home-screen widget in step with the data.
   useEffect(() => {
