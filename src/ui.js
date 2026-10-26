@@ -241,7 +241,7 @@ export function Input({ style, multiline, ...rest }) {
 
 export function Field({ label, hint, children, style }) {
   return (
-    <View style={[{ gap: 10, marginBottom: 22 }, style]}>
+    <View collapsable={false} style={[{ gap: 10, marginBottom: 22 }, style]}>
       {label ? <Txt v="label">{label}</Txt> : null}
       {children}
       {hint ? <Txt v="tiny" style={{ ...ff(400) }}>{hint}</Txt> : null}

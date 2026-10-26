@@ -51,9 +51,9 @@ export default function NotesScreen({ nav }) {
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 12, paddingBottom: 130 }} keyboardShouldPersistTaps="handled">
       <Txt v="display">{t('tabs.notes')}</Txt>
       {data.notes.length ? (
-        <Row gap={8} style={{ marginTop: 14, backgroundColor: C.card, borderRadius: R.md, paddingHorizontal: 12, borderWidth: 1, borderColor: C.glassBorder }}>
+        <Row gap={8} collapsable={false} style={{ marginTop: 14, backgroundColor: C.card, borderRadius: R.md, paddingHorizontal: 12, borderWidth: 1, borderColor: C.glassBorder }}>
           <Icon name="search" size={18} color={C.muted} />
-          <Input value={q} onChangeText={setQ} placeholder={t('notes.search')} style={{ flex: 1, borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0 }} />
+          <Input value={q} onChangeText={setQ} accessibilityLabel="notes-search" placeholder={t('notes.search')} style={{ flex: 1, borderWidth: 0, backgroundColor: 'transparent', paddingHorizontal: 0 }} />
         </Row>
       ) : null}
       {!data.notes.length ? (
@@ -118,7 +118,7 @@ export function NoteEditor({ nav, params }) {
         {text.trim() ? <IconBtn name="share-outline" onPress={() => Share.share({ message: text })} label={t('list.share')} /> : null}
         {note ? <IconBtn name="trash-outline" color={C.danger} onPress={remove} label={t('common.delete')} /> : null}
       </Row>}>
-      <View style={{ flex: 1, paddingHorizontal: 18 }}>
+      <View collapsable={false} style={{ flex: 1, paddingHorizontal: 18 }}>
         <TextInput
           value={text}
           onChangeText={setText}

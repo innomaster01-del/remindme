@@ -235,10 +235,12 @@ export function QuickAdd({ defaultDate }) {
   };
   return (
     <View style={{ marginTop: 14 }}>
-      <View style={[{
+      {/* The container keeps the same style keys while focused: on Android (Fabric) a change that
+          alters view flattening re-creates the native view and the field loses focus. */}
+      <View collapsable={false} style={{
         flexDirection: dir.row, alignItems: 'center', gap: 8, backgroundColor: C.card, borderRadius: R.lg,
-        paddingHorizontal: 14, borderWidth: 1.5, borderColor: focus ? C.primary : 'transparent',
-      }, focus ? null : { shadowColor: C.shadow, shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 }]}>
+        paddingHorizontal: 14, borderWidth: 1.5, borderColor: focus ? C.primary : C.glassBorder,
+      }}>
         <Icon name="sparkles" size={18} color={C.primary} />
         <TextInput
           value={text}
@@ -303,7 +305,7 @@ export function Subtasks({ items, onChange, autoFocus }) {
             onPress={() => onChange(items.filter((x) => x.id !== s.id))} />
         </Row>
       ))}
-      <Row gap={10} style={{ paddingVertical: 4 }}>
+      <Row gap={10} style={{ paddingVertical: 4 }} collapsable={false}>
         <Icon name="add-circle-outline" size={22} color={C.primary} />
         <TextInput
           value={text}

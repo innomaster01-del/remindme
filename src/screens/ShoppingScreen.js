@@ -233,7 +233,7 @@ export function ListDetail({ nav, params }) {
       ) : null}
 
       {mode === 'write' ? (
-        <View style={[{ backgroundColor: C.card, borderRadius: R.lg, paddingHorizontal: 16, paddingVertical: 8 }, shadow(1)]}>
+        <View collapsable={false} style={[{ backgroundColor: C.card, borderRadius: R.lg, paddingHorizontal: 16, paddingVertical: 8 }, shadow(1)]}>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -250,8 +250,8 @@ export function ListDetail({ nav, params }) {
       {mode === 'write' && checked.length ? <Txt v="tiny" style={{ marginTop: 10, ...ff(400) }}>{t('list.boughtHidden', { n: checked.length })}</Txt> : null}
 
       {mode === 'check' ? (
-      <View style={{ backgroundColor: C.card, borderRadius: R.lg, padding: 8, marginTop: 4, borderWidth: 1, borderColor: C.glassBorder }}>
-        <Row gap={6}>
+      <View collapsable={false} style={{ backgroundColor: C.card, borderRadius: R.lg, padding: 8, marginTop: 4, borderWidth: 1, borderColor: C.glassBorder }}>
+        <Row gap={6} collapsable={false}>
           <TextInput
             ref={inputRef}
             value={name}
