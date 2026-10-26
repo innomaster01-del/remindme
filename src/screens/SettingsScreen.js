@@ -11,7 +11,7 @@ import { previewSound } from '../soundPreview';
 
 const LOGO = require('../../assets/icon.png');
 function AppLogo() {
-  return <Image source={LOGO} accessibilityLabel="Poof Reminder" style={{ width: 96, height: 96, borderRadius: 26, alignSelf: 'center' }} />;
+  return <Image source={LOGO} accessibilityLabel="Poof Reminder" style={{ width: 84, height: 84, borderRadius: 24, alignSelf: 'center' }} />;
 }
 
 export function LanguagePicker({ value, onPick }) {
@@ -177,7 +177,7 @@ export function Onboarding({ onDone, onRequestPermission }) {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(data.settings.lang ? 1 : 0);
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, padding: 24, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 }}>
+    <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ flexGrow: 1, padding: 24, paddingTop: insets.top + 28, paddingBottom: insets.bottom + 24 }}>
       {step === 0 ? (
         <View style={{ flex: 1, gap: 20 }}>
           <View style={{ alignItems: 'center', gap: 14, marginBottom: 10 }}>
@@ -188,7 +188,7 @@ export function Onboarding({ onDone, onRequestPermission }) {
         </View>
       ) : (
         <View style={{ flex: 1, justifyContent: 'space-between' }}>
-          <View style={{ gap: 18, marginTop: 30 }}>
+          <View style={{ gap: 16, marginTop: 8, marginBottom: 20 }}>
             <AppLogo />
             <Txt v="display" center>{t('onboarding.welcomeTitle')}</Txt>
             <Txt center style={{ color: C.muted, fontSize: 17, lineHeight: 25 }}>{t('onboarding.welcomeBody')}</Txt>
@@ -211,6 +211,6 @@ export function Onboarding({ onDone, onRequestPermission }) {
           </View>
         </View>
       )}
-    </View>
+    </ScrollView>
   );
 }
