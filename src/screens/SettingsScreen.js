@@ -161,7 +161,7 @@ export default function SettingsScreen({ nav, notif, onRequestPermission, schedu
         ])} />
       </Section>
 
-      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.6.0</Txt>
+      <Txt v="tiny" center style={{ marginTop: 28 }}>{t('appName')}  {t('settings.version')} 1.6.1</Txt>
 
       <Sheet visible={importOpen} onClose={() => setImportOpen(false)} title={t('settings.import')}>
         <Input value={importText} onChangeText={setImportText} placeholder={t('settings.importPh')} multiline style={{ minHeight: 140, textAlign: 'left', writingDirection: 'ltr' }} />
